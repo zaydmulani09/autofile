@@ -16,7 +16,10 @@ import {
   Trash2,
   Download,
   FolderDown,
-  Info
+  Info,
+  Upload,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { FileItem } from '../types';
 import { cn } from '../utils';
@@ -35,9 +38,64 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [padding, setPadding] = useState(1);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const removeFile = (id: string) => {
     setFiles(prev => prev.filter(f => f.id !== id));
+  };
+
+  const moveUp = (index: number) => {
+    if (index === 0) return;
+    const newFiles = [...files];
+    [newFiles[index - 1], newFiles[index]] = [newFiles[index], newFiles[index - 1]];
+    setFiles(newFiles);
+  };
+
+  const moveDown = (index: number) => {
+    if (index === files.length - 1) return;
+    const newFiles = [...files];
+    [newFiles[index + 1], newFiles[index]] = [newFiles[index], newFiles[index + 1]];
+    setFiles(newFiles);
+  };
+
+  const handleFiles = (selectedFiles: FileList | File[]) => {
+    const newFiles: FileItem[] = Array.from(selectedFiles).map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      name: file.name,
+      size: file.size,
+      type: file.type || 'application/octet-stream',
+      extension: file.name.split('.').pop() || '',
+      lastModified: file.lastModified,
+      path: '/Uploaded',
+      isDuplicate: false,
+      originalFile: file instanceof File ? file : undefined
+    }));
+
+    setFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
+  const onFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFiles(e.target.files);
+    }
   };
 
   const getPreviewName = (originalName: string, index: number) => {
@@ -148,26 +206,56 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
         </div>
       </header>
 
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        multiple 
+        ref={fileInputRef} 
+        onChange={onFileInputChange} 
+        className="hidden" 
+      />
+
       {files.length === 0 ? (
-        <div className="glass-panel p-20 flex flex-col items-center justify-center text-center">
+        <div 
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={cn(
+            "glass-panel p-20 flex flex-col items-center justify-center text-center transition-all cursor-pointer border-2 border-dashed",
+            isDragging ? "border-accent bg-accent/5 scale-[0.99]" : "border-white/10 hover:border-white/20"
+          )}
+        >
           <div className="w-24 h-24 rounded-3xl bg-accent/10 flex items-center justify-center mb-8">
-            <Type className="w-12 h-12 text-accent" />
+            <Upload className={cn("w-12 h-12 transition-colors", isDragging ? "text-accent" : "text-white/40")} />
           </div>
-          <h3 className="text-2xl font-bold">No Files Loaded</h3>
+          <h3 className="text-2xl font-bold">Upload Files to Rename</h3>
           <p className="text-white/40 mt-3 max-w-md text-lg">
-            Please load some files in the "Organize Files" tab to start bulk renaming.
+            Drag and drop files here or click to select them. You can reorder them after uploading.
           </p>
+          <button className="mt-8 px-8 py-3 rounded-2xl bg-white text-charcoal font-bold hover:bg-white/90 transition-all shadow-xl shadow-white/5">
+            Select Files
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Configuration */}
           <div className="lg:col-span-4 space-y-8">
             <div className="glass-panel p-8 space-y-8">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                  <Settings2 className="w-5 h-5 text-accent" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <Settings2 className="w-5 h-5 text-accent" />
+                  </div>
+                  <h3 className="font-bold text-lg">Configuration</h3>
                 </div>
-                <h3 className="font-bold text-lg">Configuration</h3>
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-white transition-all"
+                  title="Add more files"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
               </div>
 
               <div className="space-y-6">
@@ -289,8 +377,24 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
                         <p className="text-sm font-bold text-white truncate tracking-tight">{getPreviewName(file.name, i)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="hidden group-hover:block">
+                    <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-1">
+                        <button 
+                          onClick={() => moveUp(i)}
+                          disabled={i === 0}
+                          className="p-1 rounded-md hover:bg-white/10 text-white/20 hover:text-white disabled:opacity-0 transition-all"
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                        </button>
+                        <button 
+                          onClick={() => moveDown(i)}
+                          disabled={i === files.length - 1}
+                          className="p-1 rounded-md hover:bg-white/10 text-white/20 hover:text-white disabled:opacity-0 transition-all"
+                        >
+                          <ArrowDown className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="hidden group-hover:block ml-2">
                         <CheckCircle2 className="w-6 h-6 text-emerald-500/50" />
                       </div>
                       <button 

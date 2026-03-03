@@ -18,19 +18,29 @@ import {
   Sun,
   Languages,
   Zap,
-  HardDrive
+  HardDrive,
+  AlertTriangle,
+  RefreshCcw
 } from 'lucide-react';
 import { cn } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import { FileItem, SmartRule } from '../types';
+import { MOCK_FILES, MOCK_RULES } from '../constants';
 
-type SettingsSubView = 'none' | 'profile' | 'security' | 'notifications' | 'language' | 'appearance' | 'storage' | 'performance';
+type SettingsSubView = 'none' | 'profile' | 'security' | 'notifications' | 'language' | 'appearance' | 'storage' | 'performance' | 'danger';
 
-export default function Settings() {
+interface SettingsProps {
+  setFiles?: React.Dispatch<React.SetStateAction<FileItem[]>>;
+  setRules?: React.Dispatch<React.SetStateAction<SmartRule[]>>;
+}
+
+export default function Settings({ setFiles, setRules }: SettingsProps) {
   const { user, logout, updateProfile } = useAuth();
   const [activeSubView, setActiveSubView] = useState<SettingsSubView>('none');
   const [newName, setNewName] = useState(user?.name || '');
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('Settings updated successfully!');
 
   // Settings states
   const [notifications, setNotifications] = useState({ email: true, push: true, weekly: false });
@@ -44,7 +54,7 @@ export default function Settings() {
     try {
       await updateProfile(newName);
       setActiveSubView('none');
-      triggerSuccess();
+      triggerSuccess('Profile updated successfully!');
     } catch (error) {
       console.error(error);
     } finally {
@@ -52,18 +62,32 @@ export default function Settings() {
     }
   };
 
-  const triggerSuccess = () => {
+  const triggerSuccess = (message: string = 'Settings updated successfully!') => {
+    setSuccessMessage(message);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
   const handleClearCache = () => {
-    // Mock clearing cache
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
-      triggerSuccess();
+      triggerSuccess('Application cache cleared!');
     }, 1000);
+  };
+
+  const handleResetApp = () => {
+    if (window.confirm('Are you sure you want to reset the application? This will delete all files and rules.')) {
+      setIsSaving(true);
+      setTimeout(() => {
+        if (setFiles) setFiles(MOCK_FILES);
+        if (setRules) setRules(MOCK_RULES);
+        localStorage.removeItem('autofile_files');
+        setIsSaving(false);
+        setActiveSubView('none');
+        triggerSuccess('Application reset to defaults!');
+      }, 1500);
+    }
   };
 
   const renderSubView = () => {
@@ -112,9 +136,19 @@ export default function Settings() {
                     <p className="text-xs text-white/40">Add an extra layer of security.</p>
                   </div>
                 </div>
-                <button className="text-xs font-bold text-accent">Enable</button>
+                <button 
+                  onClick={() => triggerSuccess('2FA setup initiated!')}
+                  className="text-xs font-bold text-accent hover:underline"
+                >
+                  Enable
+                </button>
               </div>
-              <button className="w-full py-3 rounded-xl border border-white/10 hover:bg-white/5 text-sm font-bold">Change Password</button>
+              <button 
+                onClick={() => triggerSuccess('Password reset email sent!')}
+                className="w-full py-3 rounded-xl border border-white/10 hover:bg-white/5 text-sm font-bold transition-all"
+              >
+                Change Password
+              </button>
             </div>
           </div>
         );
@@ -130,7 +164,10 @@ export default function Settings() {
                 <div key={key} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
                   <span className="text-sm font-bold capitalize">{key} Notifications</span>
                   <button 
-                    onClick={() => setNotifications(prev => ({ ...prev, [key]: !val }))}
+                    onClick={() => {
+                      setNotifications(prev => ({ ...prev, [key]: !val }));
+                      triggerSuccess(`${key.charAt(0).toUpperCase() + key.slice(1)} notifications ${!val ? 'enabled' : 'disabled'}`);
+                    }}
                     className={cn("w-10 h-5 rounded-full relative transition-colors", val ? "bg-accent" : "bg-white/10")}
                   >
                     <motion.div animate={{ x: val ? 22 : 2 }} className="absolute top-1 w-3 h-3 bg-white rounded-full" />
@@ -151,7 +188,7 @@ export default function Settings() {
               {['English', 'Spanish', 'French', 'German', 'Japanese'].map(lang => (
                 <button 
                   key={lang}
-                  onClick={() => { setLanguage(lang); triggerSuccess(); }}
+                  onClick={() => { setLanguage(lang); triggerSuccess(`Language changed to ${lang}`); }}
                   className={cn("p-4 rounded-xl border flex items-center justify-between transition-all", language === lang ? "bg-accent/10 border-accent text-accent" : "bg-white/5 border-white/10 text-white/60 hover:text-white")}
                 >
                   <span className="text-sm font-bold">{lang}</span>
@@ -170,14 +207,14 @@ export default function Settings() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <button 
-                onClick={() => setTheme('dark')}
+                onClick={() => { setTheme('dark'); triggerSuccess('Dark theme applied'); }}
                 className={cn("p-6 rounded-2xl border flex flex-col items-center gap-3 transition-all", theme === 'dark' ? "bg-accent/10 border-accent text-accent" : "bg-white/5 border-white/10 text-white/40")}
               >
                 <Moon className="w-8 h-8" />
                 <span className="text-sm font-bold">Dark Mode</span>
               </button>
               <button 
-                onClick={() => setTheme('light')}
+                onClick={() => { setTheme('light'); triggerSuccess('Light theme applied'); }}
                 className={cn("p-6 rounded-2xl border flex flex-col items-center gap-3 transition-all", theme === 'light' ? "bg-accent/10 border-accent text-accent" : "bg-white/5 border-white/10 text-white/40")}
               >
                 <Sun className="w-8 h-8" />
@@ -206,7 +243,7 @@ export default function Settings() {
               <button 
                 onClick={handleClearCache}
                 disabled={isSaving}
-                className="w-full py-3 rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500 text-sm font-bold flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500 text-sm font-bold flex items-center justify-center gap-2 transition-all"
               >
                 <Trash2 className="w-4 h-4" /> {isSaving ? 'Clearing...' : 'Clear Application Cache'}
               </button>
@@ -230,12 +267,40 @@ export default function Settings() {
                   </div>
                 </div>
                 <button 
-                  onClick={() => setPerformanceMode(!performanceMode)}
+                  onClick={() => {
+                    setPerformanceMode(!performanceMode);
+                    triggerSuccess(`Hardware acceleration ${!performanceMode ? 'enabled' : 'disabled'}`);
+                  }}
                   className={cn("w-10 h-5 rounded-full relative transition-colors", performanceMode ? "bg-accent" : "bg-white/10")}
                 >
                   <motion.div animate={{ x: performanceMode ? 22 : 2 }} className="absolute top-1 w-3 h-3 bg-white rounded-full" />
                 </button>
               </div>
+            </div>
+          </div>
+        );
+      case 'danger':
+        return (
+          <div className="glass-panel p-6 space-y-6 border-red-500/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                <h3 className="font-bold text-lg text-red-500">Danger Zone</h3>
+              </div>
+              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 rounded-2xl bg-red-500/5 border border-red-500/10 space-y-4">
+              <p className="text-sm text-red-200/60 leading-relaxed">
+                Resetting the application will permanently delete all your uploaded files, custom rules, and settings. This action cannot be undone.
+              </p>
+              <button 
+                onClick={handleResetApp}
+                disabled={isSaving}
+                className="w-full py-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-500/20"
+              >
+                {isSaving ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                Reset All Data
+              </button>
             </div>
           </div>
         );
@@ -265,6 +330,7 @@ export default function Settings() {
       items: [
         { icon: Database, label: 'Storage Management', desc: 'Configure default paths and limits.', action: () => setActiveSubView('storage') },
         { icon: Cpu, label: 'Performance', desc: 'Manage background processes and cache.', action: () => setActiveSubView('performance') },
+        { icon: AlertTriangle, label: 'Danger Zone', desc: 'Reset app and delete all data.', action: () => setActiveSubView('danger'), color: 'text-red-400' },
       ]
     }
   ];
@@ -306,11 +372,11 @@ export default function Settings() {
                         className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-all group text-left"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-accent/10 group-hover:text-accent transition-all">
+                          <div className={cn("w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-accent/10 group-hover:text-accent transition-all", item.color)}>
                             <item.icon className="w-5 h-5" />
                           </div>
                           <div>
-                            <p className="text-sm font-bold">{item.label}</p>
+                            <p className={cn("text-sm font-bold", item.color)}>{item.label}</p>
                             <p className="text-xs text-white/40 mt-0.5">{item.desc}</p>
                           </div>
                         </div>
@@ -358,7 +424,7 @@ export default function Settings() {
             className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3"
           >
             <Check className="w-5 h-5" />
-            <span className="font-bold">Settings updated successfully!</span>
+            <span className="font-bold">{successMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>

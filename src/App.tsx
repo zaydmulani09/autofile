@@ -89,7 +89,7 @@ function AppContent() {
       case 'ai': return <AIAssistant />;
       case 'timer': return <FocusTimer />;
       case 'notes': return <SmartNotes />;
-      case 'settings': return <Settings />;
+      case 'settings': return <Settings setFiles={setFiles} setRules={setRules} />;
       default: return <Dashboard files={files} rules={rules} setFiles={setFiles} setActiveTab={setActiveTab} />;
     }
   };
