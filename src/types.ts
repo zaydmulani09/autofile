@@ -13,7 +13,7 @@ export interface FileItem {
 export interface SmartRule {
   id: string;
   name: string;
-  condition: 'type' | 'size' | 'name' | 'date';
+  condition: 'type' | 'size' | 'name' | 'date' | 'extension';
   operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan';
   value: string;
   action: 'move' | 'rename' | 'delete';

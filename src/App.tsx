@@ -80,17 +80,17 @@ function AppContent() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard': return <Dashboard files={files} rules={rules} setFiles={setFiles} />;
+      case 'dashboard': return <Dashboard files={files} rules={rules} setFiles={setFiles} setActiveTab={setActiveTab} />;
       case 'organize': return <OrganizeFiles files={files} setFiles={setFiles} onNavigateToRename={() => setActiveTab('rename')} />;
       case 'rename': return <RenameFiles files={files} setFiles={setFiles} />;
       case 'duplicates': return <DuplicateCleaner files={files} setFiles={setFiles} />;
-      case 'rules': return <SmartRules rules={rules} setRules={setRules} />;
+      case 'rules': return <SmartRules rules={rules} setRules={setRules} files={files} setFiles={setFiles} />;
       case 'analytics': return <FileAnalytics files={files} setFiles={setFiles} />;
       case 'ai': return <AIAssistant />;
       case 'timer': return <FocusTimer />;
       case 'notes': return <SmartNotes />;
       case 'settings': return <Settings />;
-      default: return <Dashboard files={files} rules={rules} setFiles={setFiles} />;
+      default: return <Dashboard files={files} rules={rules} setFiles={setFiles} setActiveTab={setActiveTab} />;
     }
   };
 

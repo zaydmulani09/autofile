@@ -12,7 +12,8 @@ import {
   FileCode, 
   MoreHorizontal,
   FolderTree,
-  Trash2
+  Trash2,
+  Type
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -28,22 +29,64 @@ import {
   AreaChart,
   Area
 } from 'recharts';
-import { FileItem, SmartRule } from '../types';
+import { FileItem, SmartRule, TabId } from '../types';
 import { formatBytes, formatDate, cn } from '../utils';
+import { useAuth } from '../contexts/AuthContext';
 
 interface DashboardProps {
   files: FileItem[];
   rules: SmartRule[];
   setFiles: React.Dispatch<React.SetStateAction<FileItem[]>>;
+  setActiveTab: (tab: TabId) => void;
 }
 
-import { useAuth } from '../contexts/AuthContext';
-
-export default function Dashboard({ files, rules, setFiles }: DashboardProps) {
+export default function Dashboard({ files, rules, setFiles, setActiveTab }: DashboardProps) {
   const { user } = useAuth();
+  const [isRunningRules, setIsRunningRules] = React.useState(false);
   
   const removeFile = (id: string) => {
     setFiles(prev => prev.filter(f => f.id !== id));
+  };
+
+  const runAllRules = () => {
+    if (files.length === 0 || rules.length === 0) return;
+    setIsRunningRules(true);
+    
+    setTimeout(() => {
+      const activeRules = rules.filter(r => r.enabled);
+      let updatedFiles = [...files];
+
+      activeRules.forEach(rule => {
+        if (rule.action === 'move') {
+          updatedFiles = updatedFiles.map(file => {
+            let matches = false;
+            const fileValue = rule.condition === 'extension' ? file.extension : 
+                             rule.condition === 'name' ? file.name : 
+                             file.size.toString();
+
+            if (rule.operator === 'equals') matches = fileValue.toLowerCase() === rule.value.toLowerCase();
+            else if (rule.operator === 'contains') matches = fileValue.toLowerCase().includes(rule.value.toLowerCase());
+            else if (rule.operator === 'greaterThan') matches = parseFloat(fileValue) > parseFloat(rule.value);
+
+            return matches ? { ...file, path: rule.actionValue } : file;
+          });
+        } else if (rule.action === 'delete') {
+          updatedFiles = updatedFiles.filter(file => {
+            let matches = false;
+            const fileValue = rule.condition === 'extension' ? file.extension : 
+                             rule.condition === 'name' ? file.name : 
+                             file.size.toString();
+            if (rule.operator === 'equals') matches = fileValue.toLowerCase() === rule.value.toLowerCase();
+            else if (rule.operator === 'contains') matches = fileValue.toLowerCase().includes(rule.value.toLowerCase());
+            else if (rule.operator === 'greaterThan') matches = parseFloat(fileValue) > parseFloat(rule.value);
+            return !matches;
+          });
+        }
+      });
+
+      setFiles(updatedFiles);
+      setIsRunningRules(false);
+    }, 1500);
   };
 
   const totalSize = files.reduce((acc, file) => acc + file.size, 0);
@@ -279,29 +322,42 @@ export default function Dashboard({ files, rules, setFiles }: DashboardProps) {
         >
           <h3 className="font-bold text-lg mb-8">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-6">
-            <button className="p-6 rounded-3xl bg-indigo-500/5 border border-indigo-500/10 hover:bg-indigo-500/10 hover:border-indigo-500/30 transition-all flex flex-col items-center gap-4 group">
+            <button 
+              onClick={runAllRules}
+              disabled={isRunningRules || rules.length === 0}
+              className="p-6 rounded-3xl bg-indigo-500/5 border border-indigo-500/10 hover:bg-indigo-500/10 hover:border-indigo-500/30 transition-all flex flex-col items-center gap-4 group disabled:opacity-50"
+            >
               <div className="w-14 h-14 rounded-2xl bg-indigo-500 flex items-center justify-center shadow-2xl shadow-indigo-500/40 group-hover:scale-110 transition-transform group-hover:rotate-6">
-                <Zap className="w-7 h-7 text-white" />
+                <Zap className={cn("w-7 h-7 text-white", isRunningRules && "animate-pulse")} />
               </div>
-              <span className="text-sm font-bold tracking-wide">Run Rules</span>
+              <span className="text-sm font-bold tracking-wide">{isRunningRules ? 'Running...' : 'Run Rules'}</span>
             </button>
-            <button className="p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all flex flex-col items-center gap-4 group">
+            <button 
+              onClick={() => setActiveTab('duplicates')}
+              className="p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all flex flex-col items-center gap-4 group"
+            >
               <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-2xl shadow-emerald-500/40 group-hover:scale-110 transition-transform group-hover:-rotate-6">
                 <Copy className="w-7 h-7 text-white" />
               </div>
               <span className="text-sm font-bold tracking-wide">Scan Dups</span>
             </button>
-            <button className="p-6 rounded-3xl bg-pink-500/5 border border-pink-500/10 hover:bg-pink-500/10 hover:border-pink-500/30 transition-all flex flex-col items-center gap-4 group">
+            <button 
+              onClick={() => setActiveTab('organize')}
+              className="p-6 rounded-3xl bg-pink-500/5 border border-pink-500/10 hover:bg-pink-500/10 hover:border-pink-500/30 transition-all flex flex-col items-center gap-4 group"
+            >
               <div className="w-14 h-14 rounded-2xl bg-pink-500 flex items-center justify-center shadow-2xl shadow-pink-500/40 group-hover:scale-110 transition-transform group-hover:rotate-6">
                 <FolderTree className="w-7 h-7 text-white" />
               </div>
               <span className="text-sm font-bold tracking-wide">Organize</span>
             </button>
-            <button className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/30 transition-all flex flex-col items-center gap-4 group">
+            <button 
+              onClick={() => setActiveTab('rename')}
+              className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/30 transition-all flex flex-col items-center gap-4 group"
+            >
               <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform group-hover:-rotate-6">
-                <HardDrive className="w-7 h-7 text-white" />
+                <Type className="w-7 h-7 text-white" />
               </div>
-              <span className="text-sm font-bold tracking-wide">Audit</span>
+              <span className="text-sm font-bold tracking-wide">Bulk Rename</span>
             </button>
           </div>
         </motion.div>
