@@ -139,23 +139,23 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
   };
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-10">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Organize Files</h1>
-          <p className="text-white/40 mt-1">Automatically sort your files into a clean folder structure.</p>
+          <h1 className="text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">Organize Files</h1>
+          <p className="text-white/40 mt-2 text-lg">Automatically sort your files into a clean folder structure.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => setFiles([])}
-            className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex items-center gap-2 text-sm font-medium"
+            className="btn-secondary flex items-center gap-2"
           >
             <X className="w-4 h-4" /> Clear All
           </button>
           {files.length > 0 && onNavigateToRename && (
             <button 
               onClick={onNavigateToRename}
-              className="px-4 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all flex items-center gap-2 text-sm font-medium"
+              className="btn-secondary flex items-center gap-2"
             >
               <Type className="w-4 h-4" /> Go to Rename
             </button>
@@ -163,7 +163,7 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
           <button 
             onClick={() => setIsPreviewMode(true)}
             disabled={files.length === 0}
-            className="px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover transition-all flex items-center gap-2 text-sm font-bold shadow-lg shadow-accent/20 disabled:opacity-50"
+            className="btn-primary flex items-center gap-2"
           >
             <FolderPlus className="w-4 h-4" /> Organize Now
           </button>

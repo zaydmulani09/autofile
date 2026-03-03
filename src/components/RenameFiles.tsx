@@ -110,10 +110,12 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
   };
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight">Bulk Rename</h1>
-        <p className="text-white/40 mt-1">Apply powerful naming patterns to hundreds of files instantly.</p>
+    <div className="space-y-10">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">Rename Files</h1>
+          <p className="text-white/40 mt-2 text-lg">Bulk rename your files with powerful sequential patterns.</p>
+        </div>
       </header>
 
       {files.length === 0 ? (
@@ -223,7 +225,7 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
                 <button 
                   onClick={handleRename}
                   disabled={isRenaming}
-                  className="py-4 rounded-2xl bg-accent hover:bg-accent-hover text-white font-bold shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  className="btn-primary flex items-center justify-center gap-2"
                 >
                   {isRenaming ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
                   Apply
@@ -231,7 +233,7 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
                 <button 
                   onClick={handleDownloadAll}
                   disabled={isDownloading}
-                  className="py-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  className="btn-secondary flex items-center justify-center gap-2"
                 >
                   {isDownloading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <FolderDown className="w-5 h-5" />}
                   Download ZIP
