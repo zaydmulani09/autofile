@@ -11,6 +11,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
+  loginWithGoogle: (userData: User) => void;
   logout: () => void;
   updateProfile: (name: string) => Promise<void>;
   isLoading: boolean;
@@ -64,6 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('autofile_user', JSON.stringify(userData));
   };
 
+  const loginWithGoogle = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem('autofile_user', JSON.stringify(userData));
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('autofile_user');
@@ -87,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, updateProfile, isLoading }}>
+    <AuthContext.Provider value={{ user, login, signup, loginWithGoogle, logout, updateProfile, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
