@@ -47,7 +47,8 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
       extension: file.name.split('.').pop() || '',
       lastModified: file.lastModified,
       path: '/Uploaded',
-      isDuplicate: false
+      isDuplicate: false,
+      originalFile: file instanceof File ? file : undefined
     }));
 
     setFiles(prev => [...prev, ...newFiles]);

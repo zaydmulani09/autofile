@@ -79,13 +79,19 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
       const zip = new JSZip();
       const folder = zip.folder("Renamed_Files");
       
-      files.forEach((file, index) => {
-        const renamedName = getPreviewName(file.name, index);
-        // Since we don't have real file content in this demo, 
-        // we create a placeholder text file with metadata
-        const content = `File: ${file.name}\nRenamed to: ${renamedName}\nSize: ${file.size} bytes\nType: ${file.type}\nLast Modified: ${new Date(file.lastModified).toLocaleString()}`;
-        folder?.file(renamedName, content);
-      });
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const renamedName = getPreviewName(file.name, i);
+        
+        if (file.originalFile) {
+          // Use the actual file content if available
+          folder?.file(renamedName, file.originalFile);
+        } else {
+          // Fallback for simulated files
+          const content = `File: ${file.name}\nRenamed to: ${renamedName}\nSize: ${file.size} bytes\nType: ${file.type}\nLast Modified: ${new Date(file.lastModified).toLocaleString()}`;
+          folder?.file(renamedName, content);
+        }
+      }
 
       const blob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(blob);

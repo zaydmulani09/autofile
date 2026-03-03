@@ -7,6 +7,7 @@ export interface FileItem {
   lastModified: number;
   path: string;
   isDuplicate?: boolean;
+  originalFile?: File;
 }
 
 export interface SmartRule {
