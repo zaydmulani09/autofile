@@ -36,6 +36,7 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
   const [useRenaming, setUseRenaming] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isOrganizing, setIsOrganizing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -136,42 +137,52 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
   };
 
   const handleDownloadOrganized = async () => {
-    const zip = new JSZip();
-    
-    files.forEach((file, index) => {
-      const proposed = getProposedFile(file, index);
-      const path = proposed.path.startsWith('/') ? proposed.path.substring(1) : proposed.path;
-      let targetFolder = zip;
+    if (files.length === 0) return;
+    setIsDownloading(true);
+    try {
+      const zip = new JSZip();
       
-      if (path && path !== 'Uploaded') {
-        const parts = path.split('/').filter(Boolean);
-        let current = zip;
-        for (const part of parts) {
-          current = current.folder(part) || current;
+      files.forEach((file, index) => {
+        const proposed = getProposedFile(file, index);
+        const path = proposed.path.startsWith('/') ? proposed.path.substring(1) : proposed.path;
+        let targetFolder = zip;
+        
+        if (path && path !== 'Uploaded') {
+          const parts = path.split('/').filter(Boolean);
+          let current = zip;
+          for (const part of parts) {
+            current = current.folder(part) || current;
+          }
+          targetFolder = current;
         }
-        targetFolder = current;
-      }
-      
-      if (file.originalFile) {
-        targetFolder.file(proposed.name, file.originalFile);
-      } else {
-        targetFolder.file(proposed.name, `Simulated content for ${proposed.name}`);
-      }
-    });
+        
+        if (file.originalFile) {
+          targetFolder.file(proposed.name, file.originalFile);
+        } else {
+          targetFolder.file(proposed.name, `Simulated content for ${proposed.name}`);
+        }
+      });
 
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `organized_files_${new Date().getTime()}.zip`;
-    link.click();
-    URL.revokeObjectURL(url);
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `organized_files_${Date.now()}.zip`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-    // Also apply changes to state
-    const newFiles = files.map((f, i) => getProposedFile(f, i));
-    setFiles(newFiles);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+      // Also apply changes to state
+      const newFiles = files.map((f, i) => getProposedFile(f, i));
+      setFiles(newFiles);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const getPreviewStructure = () => {
@@ -202,9 +213,15 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
               </button>
               <button 
                 onClick={handleDownloadOrganized}
+                disabled={isDownloading}
                 className="btn-secondary flex items-center gap-2"
               >
-                <FolderPlus className="w-4 h-4" /> Download ZIP
+                {isDownloading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FolderPlus className="w-4 h-4" />
+                )}
+                Download ZIP
               </button>
               <button 
                 onClick={() => setIsPreviewMode(true)}

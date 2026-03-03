@@ -169,7 +169,7 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `renamed_files_${new Date().getTime()}.zip`;
+      link.setAttribute('download', `renamed_files_${Date.now()}.zip`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
