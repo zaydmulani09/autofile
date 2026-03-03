@@ -20,7 +20,7 @@ export interface SmartRule {
   enabled: boolean;
 }
 
-export type TabId = 'dashboard' | 'organize' | 'rename' | 'duplicates' | 'rules' | 'analytics' | 'settings';
+export type TabId = 'dashboard' | 'organize' | 'rename' | 'duplicates' | 'rules' | 'analytics' | 'ai' | 'timer' | 'notes' | 'settings';
 
 export interface AppStats {
   totalFiles: number;

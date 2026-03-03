@@ -14,7 +14,10 @@ import {
   X,
   Search,
   Bell,
-  User
+  User,
+  Sparkles,
+  Timer,
+  StickyNote
 } from 'lucide-react';
 import { TabId, FileItem, SmartRule } from './types';
 import { MOCK_FILES, MOCK_RULES } from './constants';
@@ -28,6 +31,9 @@ import DuplicateCleaner from './components/DuplicateCleaner';
 import SmartRules from './components/SmartRules';
 import FileAnalytics from './components/FileAnalytics';
 import Settings from './components/Settings';
+import AIAssistant from './components/AIAssistant';
+import FocusTimer from './components/FocusTimer';
+import SmartNotes from './components/SmartNotes';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
@@ -65,6 +71,9 @@ function AppContent() {
     { id: 'duplicates', name: 'Duplicate Cleaner', icon: Copy },
     { id: 'rules', name: 'Smart Rules', icon: Zap },
     { id: 'analytics', name: 'File Analytics', icon: BarChart3 },
+    { id: 'ai', name: 'AI Assistant', icon: Sparkles },
+    { id: 'timer', name: 'Focus Timer', icon: Timer },
+    { id: 'notes', name: 'Smart Notes', icon: StickyNote },
     { id: 'settings', name: 'Settings', icon: SettingsIcon },
   ];
 
@@ -76,6 +85,9 @@ function AppContent() {
       case 'duplicates': return <DuplicateCleaner files={files} setFiles={setFiles} />;
       case 'rules': return <SmartRules rules={rules} setRules={setRules} />;
       case 'analytics': return <FileAnalytics files={files} setFiles={setFiles} />;
+      case 'ai': return <AIAssistant />;
+      case 'timer': return <FocusTimer />;
+      case 'notes': return <SmartNotes />;
       case 'settings': return <Settings />;
       default: return <Dashboard files={files} rules={rules} setFiles={setFiles} />;
     }
