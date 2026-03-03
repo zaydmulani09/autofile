@@ -32,6 +32,8 @@ interface OrganizeFilesProps {
 export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: OrganizeFilesProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [organizeBy, setOrganizeBy] = useState<'type' | 'date' | 'size'>('type');
+  const [renamePattern, setRenamePattern] = useState('');
+  const [useRenaming, setUseRenaming] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isOrganizing, setIsOrganizing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -82,39 +84,49 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
 
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
+  const getProposedFile = (file: FileItem, index: number) => {
+    let newPath = file.path;
+    let newName = file.name;
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    
+    // Only calculate new path if it's still in the uploaded state
+    if (newPath === '/Uploaded') {
+      switch (organizeBy) {
+        case 'type':
+          if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext)) newPath = '/Images';
+          else if (['pdf', 'doc', 'docx', 'txt', 'rtf'].includes(ext)) newPath = '/Documents';
+          else if (['xlsx', 'xls', 'csv', 'ods'].includes(ext)) newPath = '/Spreadsheets';
+          else if (['js', 'ts', 'tsx', 'py', 'cpp', 'html', 'css', 'json', 'md'].includes(ext)) newPath = '/Code';
+          else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) newPath = '/Videos';
+          else if (['mp3', 'wav', 'flac', 'm4a'].includes(ext)) newPath = '/Audio';
+          else newPath = '/Others';
+          break;
+        case 'date':
+          const date = new Date(file.lastModified);
+          newPath = `/${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+          break;
+        case 'size':
+          if (file.size > 100 * 1024 * 1024) newPath = '/Large_Files';
+          else if (file.size > 10 * 1024 * 1024) newPath = '/Medium_Files';
+          else newPath = '/Small_Files';
+          break;
+      }
+    }
+
+    if (useRenaming && renamePattern) {
+      const num = (index + 1).toString().padStart(2, '0');
+      newName = `${renamePattern}_${num}.${ext}`;
+    }
+
+    return { ...file, path: newPath, name: newName };
+  };
+
   const startOrganizing = () => {
     if (files.length === 0) return;
     setIsOrganizing(true);
     
     setTimeout(() => {
-      const newFiles = files.map(file => {
-        let newPath = file.path;
-        const ext = file.name.split('.').pop()?.toLowerCase() || '';
-        
-        switch (organizeBy) {
-          case 'type':
-            if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext)) newPath = '/Images';
-            else if (['pdf', 'doc', 'docx', 'txt', 'rtf'].includes(ext)) newPath = '/Documents';
-            else if (['xlsx', 'xls', 'csv', 'ods'].includes(ext)) newPath = '/Spreadsheets';
-            else if (['js', 'ts', 'tsx', 'py', 'cpp', 'html', 'css', 'json', 'md'].includes(ext)) newPath = '/Code';
-            else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) newPath = '/Videos';
-            else if (['mp3', 'wav', 'flac', 'm4a'].includes(ext)) newPath = '/Audio';
-            else newPath = '/Others';
-            break;
-          case 'date':
-            const date = new Date(file.lastModified);
-            newPath = `/${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-            break;
-          case 'size':
-            if (file.size > 100 * 1024 * 1024) newPath = '/Large_Files';
-            else if (file.size > 10 * 1024 * 1024) newPath = '/Medium_Files';
-            else newPath = '/Small_Files';
-            break;
-        }
-        
-        return { ...file, path: newPath };
-      });
-
+      const newFiles = files.map((file, index) => getProposedFile(file, index));
       setFiles(newFiles);
       setIsOrganizing(false);
       setIsPreviewMode(false);
@@ -126,8 +138,9 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
   const handleDownloadOrganized = async () => {
     const zip = new JSZip();
     
-    files.forEach(file => {
-      const path = file.path.startsWith('/') ? file.path.substring(1) : file.path;
+    files.forEach((file, index) => {
+      const proposed = getProposedFile(file, index);
+      const path = proposed.path.startsWith('/') ? proposed.path.substring(1) : proposed.path;
       let targetFolder = zip;
       
       if (path && path !== 'Uploaded') {
@@ -140,9 +153,9 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
       }
       
       if (file.originalFile) {
-        targetFolder.file(file.name, file.originalFile);
+        targetFolder.file(proposed.name, file.originalFile);
       } else {
-        targetFolder.file(file.name, `Simulated content for ${file.name}`);
+        targetFolder.file(proposed.name, `Simulated content for ${proposed.name}`);
       }
     });
 
@@ -153,13 +166,20 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
     link.download = `organized_files_${new Date().getTime()}.zip`;
     link.click();
     URL.revokeObjectURL(url);
+
+    // Also apply changes to state
+    const newFiles = files.map((f, i) => getProposedFile(f, i));
+    setFiles(newFiles);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
   };
 
   const getPreviewStructure = () => {
-    const folders = new Set(files.map(f => f.path));
+    const proposedFiles = files.map((f, i) => getProposedFile(f, i));
+    const folders = new Set(proposedFiles.map(f => f.path));
     return Array.from(folders).map(path => ({
       name: path === '/Uploaded' ? 'Root' : path.replace(/^\//, '').replace(/\//g, ' > '),
-      count: files.filter(f => f.path === path).length,
+      count: proposedFiles.filter(f => f.path === path).length,
       path
     })).sort((a, b) => a.name.localeCompare(b.name));
   };
@@ -284,6 +304,44 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
                   <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
                 </div>
               </div>
+
+              <div className="pt-4 border-t border-white/5 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Type className="w-5 h-5 text-white/30" />
+                    <span className="text-sm font-bold text-white/60">Bulk Rename</span>
+                  </div>
+                  <button 
+                    onClick={() => setUseRenaming(!useRenaming)}
+                    className={cn(
+                      "w-12 h-6 rounded-full transition-all relative",
+                      useRenaming ? "bg-accent" : "bg-white/10"
+                    )}
+                  >
+                    <motion.div 
+                      animate={{ x: useRenaming ? 26 : 2 }}
+                      className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg"
+                    />
+                  </button>
+                </div>
+
+                {useRenaming && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="space-y-3"
+                  >
+                    <label className="text-xs font-bold text-white/30 uppercase tracking-[0.2em]">Rename Pattern</label>
+                    <input 
+                      type="text" 
+                      value={renamePattern}
+                      onChange={(e) => setRenamePattern(e.target.value)}
+                      placeholder="e.g. Organized_File"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-bold"
+                    />
+                  </motion.div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -358,6 +416,14 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
                           viewMode === 'grid' ? "w-full" : ""
                         )}>
                           <p className="text-sm font-bold truncate tracking-tight">{file.name}</p>
+                          {useRenaming && renamePattern && file.path === '/Uploaded' && (
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <ArrowRight className="w-3 h-3 text-accent" />
+                              <p className="text-[10px] font-bold text-accent truncate">
+                                {renamePattern}_{(files.indexOf(file) + 1).toString().padStart(2, '0')}.{file.extension}
+                              </p>
+                            </div>
+                          )}
                           <div className={cn(
                             "flex items-center gap-2 mt-1",
                             viewMode === 'grid' ? "justify-center" : ""

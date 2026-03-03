@@ -133,14 +133,15 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
   };
 
   const handleDownloadAll = async () => {
+    if (files.length === 0) return;
     setIsDownloading(true);
     try {
       const zip = new JSZip();
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        // Use the current name which might have been renamed by handleRename
-        const renamedName = file.name;
+        // Use the preview name so the user gets what they see in the list
+        const renamedName = getPreviewName(file.name, i);
         
         // Respect the path if it exists (remove leading slash for JSZip)
         const path = file.path.startsWith('/') ? file.path.substring(1) : file.path;
@@ -158,6 +159,7 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
         if (file.originalFile) {
           targetFolder.file(renamedName, file.originalFile);
         } else {
+          // Fallback for mock files or files without original data
           const content = `File: ${file.name}\nSize: ${file.size} bytes\nType: ${file.type}\nLast Modified: ${new Date(file.lastModified).toLocaleString()}`;
           targetFolder.file(renamedName, content);
         }
@@ -167,11 +169,21 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `organized_workspace_${new Date().getTime()}.zip`;
+      link.download = `renamed_files_${new Date().getTime()}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      
+      // Also apply the rename to the state so the UI stays in sync
+      const renamedFiles = files.map((f, i) => ({
+        ...f,
+        name: getPreviewName(f.name, i)
+      }));
+      setFiles(renamedFiles);
+      
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
       console.error("Download failed:", error);
     } finally {
