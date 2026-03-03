@@ -80,7 +80,7 @@ function AppContent() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard files={files} rules={rules} setFiles={setFiles} />;
-      case 'organize': return <OrganizeFiles files={files} setFiles={setFiles} />;
+      case 'organize': return <OrganizeFiles files={files} setFiles={setFiles} onNavigateToRename={() => setActiveTab('rename')} />;
       case 'rename': return <RenameFiles files={files} setFiles={setFiles} />;
       case 'duplicates': return <DuplicateCleaner files={files} setFiles={setFiles} />;
       case 'rules': return <SmartRules rules={rules} setRules={setRules} />;

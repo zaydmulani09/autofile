@@ -14,7 +14,8 @@ import {
   Trash2,
   FileText,
   Image as ImageIcon,
-  FileCode
+  FileCode,
+  Type
 } from 'lucide-react';
 import { FileItem } from '../types';
 import { formatBytes, cn } from '../utils';
@@ -22,9 +23,10 @@ import { formatBytes, cn } from '../utils';
 interface OrganizeFilesProps {
   files: FileItem[];
   setFiles: React.Dispatch<React.SetStateAction<FileItem[]>>;
+  onNavigateToRename?: () => void;
 }
 
-export default function OrganizeFiles({ files, setFiles }: OrganizeFilesProps) {
+export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: OrganizeFilesProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [organizeBy, setOrganizeBy] = useState<'type' | 'date' | 'size'>('type');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -149,6 +151,14 @@ export default function OrganizeFiles({ files, setFiles }: OrganizeFilesProps) {
           >
             <X className="w-4 h-4" /> Clear All
           </button>
+          {files.length > 0 && onNavigateToRename && (
+            <button 
+              onClick={onNavigateToRename}
+              className="px-4 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all flex items-center gap-2 text-sm font-medium"
+            >
+              <Type className="w-4 h-4" /> Go to Rename
+            </button>
+          )}
           <button 
             onClick={() => setIsPreviewMode(true)}
             disabled={files.length === 0}

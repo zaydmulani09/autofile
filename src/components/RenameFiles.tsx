@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import JSZip from 'jszip';
 import { 
   Type, 
   Hash, 
@@ -11,7 +12,10 @@ import {
   CheckCircle2,
   FileText,
   ChevronRight,
-  Trash2
+  Trash2,
+  Download,
+  FolderDown,
+  Info
 } from 'lucide-react';
 import { FileItem } from '../types';
 import { cn } from '../utils';
@@ -27,7 +31,9 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
   const [includeDate, setIncludeDate] = useState(true);
   const [caseType, setCaseType] = useState<'original' | 'lower' | 'upper' | 'camel'>('original');
   const [isRenaming, setIsRenaming] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [padding, setPadding] = useState(1);
 
   const removeFile = (id: string) => {
     setFiles(prev => prev.filter(f => f.id !== id));
@@ -39,7 +45,7 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
       const date = new Date().toISOString().split('T')[0];
       name += `_${date}`;
     }
-    const num = (startNumber + index).toString().padStart(3, '0');
+    const num = (startNumber + index).toString().padStart(padding, '0');
     name += `_${num}`;
 
     const ext = originalName.split('.').pop();
@@ -64,7 +70,37 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
       setIsRenaming(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-    }, 1500);
+    }, 1000);
+  };
+
+  const handleDownloadAll = async () => {
+    setIsDownloading(true);
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder("Renamed_Files");
+      
+      files.forEach((file, index) => {
+        const renamedName = getPreviewName(file.name, index);
+        // Since we don't have real file content in this demo, 
+        // we create a placeholder text file with metadata
+        const content = `File: ${file.name}\nRenamed to: ${renamedName}\nSize: ${file.size} bytes\nType: ${file.type}\nLast Modified: ${new Date(file.lastModified).toLocaleString()}`;
+        folder?.file(renamedName, content);
+      });
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `organized_files_${new Date().getTime()}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -126,7 +162,19 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-white/40 uppercase tracking-wider">Starting Number</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-white/40 uppercase tracking-wider">Starting Number</label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-white/20 uppercase">Padding</span>
+                      <select 
+                        value={padding}
+                        onChange={(e) => setPadding(parseInt(e.target.value))}
+                        className="bg-white/5 border border-white/10 rounded px-1 text-[10px] focus:outline-none"
+                      >
+                        {[1, 2, 3, 4, 5].map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => setStartNumber(Math.max(0, startNumber - 1))}
@@ -165,14 +213,31 @@ export default function RenameFiles({ files, setFiles }: RenameFilesProps) {
                 </div>
               </div>
 
-              <button 
-                onClick={handleRename}
-                disabled={isRenaming}
-                className="w-full py-4 rounded-2xl bg-accent hover:bg-accent-hover text-white font-bold shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-              >
-                {isRenaming ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
-                Apply Changes
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  onClick={handleRename}
+                  disabled={isRenaming}
+                  className="py-4 rounded-2xl bg-accent hover:bg-accent-hover text-white font-bold shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                >
+                  {isRenaming ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
+                  Apply
+                </button>
+                <button 
+                  onClick={handleDownloadAll}
+                  disabled={isDownloading}
+                  className="py-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                >
+                  {isDownloading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <FolderDown className="w-5 h-5" />}
+                  Download ZIP
+                </button>
+              </div>
+
+              <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex gap-3">
+                <Info className="w-5 h-5 text-blue-400 shrink-0" />
+                <p className="text-[10px] text-blue-200/60 leading-relaxed">
+                  The ZIP download will package all files into a single folder. Since this is a demo, files will contain metadata descriptions.
+                </p>
+              </div>
             </div>
           </div>
 
