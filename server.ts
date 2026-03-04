@@ -45,6 +45,11 @@ const upload = multer({
 // Supabase configuration
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("CRITICAL: Supabase environment variables are missing!");
+}
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 async function startServer() {
@@ -52,6 +57,18 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  // Health Check
+  app.get("/api/health", async (req, res) => {
+    try {
+      const { data, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      res.json({ status: "ok", supabase: "connected" });
+    } catch (error: any) {
+      console.error("Health Check Error:", error);
+      res.status(500).json({ status: "error", message: error.message });
+    }
+  });
 
   // Google OAuth configuration
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -165,11 +182,13 @@ async function startServer() {
   });
 
   app.post("/api/auth/signup", async (req, res) => {
-    const { email, password, name } = req.body;
-    const id = Math.random().toString(36).substr(2, 9);
-    const avatarColor = ['#3b82f6', '#a855f7', '#ef4444', '#10b981', '#f59e0b'][Math.floor(Math.random() * 5)];
-
     try {
+      const { email, password, name } = req.body;
+      if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
+
+      const id = Math.random().toString(36).substr(2, 9);
+      const avatarColor = ['#3b82f6', '#a855f7', '#ef4444', '#10b981', '#f59e0b'][Math.floor(Math.random() * 5)];
+
       const { data: newUser, error } = await supabase
         .from('profiles')
         .insert([{ id, email, password, name, avatar_color: avatarColor }])
@@ -177,29 +196,43 @@ async function startServer() {
         .single();
       
       if (error) {
+        console.error("Supabase Signup Error:", error);
         if (error.code === '23505') return res.status(400).json({ error: "Email already exists" });
-        throw error;
+        return res.status(500).json({ error: error.message });
       }
 
       res.json({ id: newUser.id, email: newUser.email, name: newUser.name, avatarColor: newUser.avatar_color });
     } catch (error: any) {
-      res.status(500).json({ error: "Internal server error" });
+      console.error("Signup Route Error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
     }
   });
 
   app.post("/api/auth/login", async (req, res) => {
-    const { email, password } = req.body;
-    const { data: user, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('email', email)
-      .eq('password', password)
-      .single();
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
 
-    if (user) {
-      res.json({ id: user.id, email: user.email, name: user.name, avatarColor: user.avatar_color });
-    } else {
-      res.status(401).json({ error: "Invalid credentials" });
+      const { data: user, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .single();
+
+      if (error) {
+        console.error("Supabase Login Error:", error);
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      if (user) {
+        res.json({ id: user.id, email: user.email, name: user.name, avatarColor: user.avatar_color });
+      } else {
+        res.status(401).json({ error: "Invalid credentials" });
+      }
+    } catch (error: any) {
+      console.error("Login Route Error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
     }
   });
 

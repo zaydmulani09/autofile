@@ -39,8 +39,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || 'Login failed');
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        throw new Error(data.error || 'Login failed');
+      } else {
+        const text = await response.text();
+        throw new Error(`Server error (${response.status}): ${text.slice(0, 100)}`);
+      }
     }
 
     const userData = await response.json();
@@ -56,8 +62,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || 'Signup failed');
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        throw new Error(data.error || 'Signup failed');
+      } else {
+        const text = await response.text();
+        throw new Error(`Server error (${response.status}): ${text.slice(0, 100)}`);
+      }
     }
 
     const userData = await response.json();
