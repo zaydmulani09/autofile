@@ -1,35 +1,17 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
+import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database("autofile.db");
-
-// Initialize database
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    email TEXT UNIQUE,
-    password TEXT,
-    name TEXT,
-    avatar_color TEXT,
-    google_id TEXT UNIQUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-  
-  CREATE TABLE IF NOT EXISTS user_settings (
-    user_id TEXT PRIMARY KEY,
-    theme TEXT DEFAULT 'dark',
-    notifications_enabled INTEGER DEFAULT 1,
-    auto_organize INTEGER DEFAULT 0,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-  );
-`);
+// Supabase configuration
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 async function startServer() {
   const app = express();
@@ -40,11 +22,14 @@ async function startServer() {
   // Google OAuth configuration
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
   const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-  const REDIRECT_URI = `${process.env.APP_URL}/auth/google/callback`;
-
+  
   // Auth Routes
   app.get("/api/auth/google/url", (req, res) => {
+    const appUrl = process.env.APP_URL || `https://${req.get('host')}`;
+    const REDIRECT_URI = `${appUrl}/auth/google/callback`;
+
     if (!GOOGLE_CLIENT_ID) {
+      console.error("GOOGLE_CLIENT_ID is missing");
       return res.status(500).json({ error: "Google Client ID not configured" });
     }
     const params = new URLSearchParams({
@@ -59,6 +44,8 @@ async function startServer() {
   });
 
   app.get("/auth/google/callback", async (req, res) => {
+    const appUrl = process.env.APP_URL || `https://${req.get('host')}`;
+    const REDIRECT_URI = `${appUrl}/auth/google/callback`;
     const { code } = req.query;
     if (!code) return res.status(400).send("No code provided");
 
@@ -81,29 +68,45 @@ async function startServer() {
 
       const { sub: googleId, email, name, picture } = userResponse.data;
 
-      // Check if user exists
-      let user = db.prepare("SELECT * FROM users WHERE google_id = ? OR email = ?").get(googleId, email) as any;
+      // Check if user exists in Supabase
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .or(`google_id.eq.${googleId},email.eq.${email}`)
+        .single();
+
+      let user = existingUser;
 
       if (!user) {
         const id = Math.random().toString(36).substr(2, 9);
         const avatarColor = ['#3b82f6', '#a855f7', '#ef4444', '#10b981', '#f59e0b'][Math.floor(Math.random() * 5)];
         
-        db.prepare("INSERT INTO users (id, email, name, avatar_color, google_id) VALUES (?, ?, ?, ?, ?)")
-          .run(id, email, name, avatarColor, googleId);
+        const { data: newUser, error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id, email, name, avatar_color: avatarColor, google_id: googleId }])
+          .select()
+          .single();
         
-        db.prepare("INSERT INTO user_settings (user_id) VALUES (?)").run(id);
-        
-        user = { id, email, name, avatarColor };
+        if (insertError) throw insertError;
+        user = newUser;
       } else if (!user.google_id) {
         // Link existing email-only account to Google
-        db.prepare("UPDATE users SET google_id = ? WHERE id = ?").run(googleId, user.id);
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('profiles')
+          .update({ google_id: googleId })
+          .eq('id', user.id)
+          .select()
+          .single();
+        
+        if (updateError) throw updateError;
+        user = updatedUser;
       }
 
       const userData = {
         id: user.id,
         email: user.email,
         name: user.name,
-        avatarColor: user.avatar_color || user.avatarColor,
+        avatarColor: user.avatar_color,
       };
 
       res.send(`
@@ -127,31 +130,37 @@ async function startServer() {
     }
   });
 
-  app.post("/api/auth/signup", (req, res) => {
+  app.post("/api/auth/signup", async (req, res) => {
     const { email, password, name } = req.body;
     const id = Math.random().toString(36).substr(2, 9);
     const avatarColor = ['#3b82f6', '#a855f7', '#ef4444', '#10b981', '#f59e0b'][Math.floor(Math.random() * 5)];
 
     try {
-      const insertUser = db.prepare("INSERT INTO users (id, email, password, name, avatar_color) VALUES (?, ?, ?, ?, ?)");
-      insertUser.run(id, email, password, name, avatarColor);
+      const { data: newUser, error } = await supabase
+        .from('profiles')
+        .insert([{ id, email, password, name, avatar_color: avatarColor }])
+        .select()
+        .single();
       
-      const insertSettings = db.prepare("INSERT INTO user_settings (user_id) VALUES (?)");
-      insertSettings.run(id);
-
-      res.json({ id, email, name, avatarColor });
-    } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        res.status(400).json({ error: "Email already exists" });
-      } else {
-        res.status(500).json({ error: "Internal server error" });
+      if (error) {
+        if (error.code === '23505') return res.status(400).json({ error: "Email already exists" });
+        throw error;
       }
+
+      res.json({ id: newUser.id, email: newUser.email, name: newUser.name, avatarColor: newUser.avatar_color });
+    } catch (error: any) {
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  app.post("/api/auth/login", (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
     const { email, password } = req.body;
-    const user = db.prepare("SELECT * FROM users WHERE email = ? AND password = ?").get(email, password) as any;
+    const { data: user, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('email', email)
+      .eq('password', password)
+      .single();
 
     if (user) {
       res.json({ id: user.id, email: user.email, name: user.name, avatarColor: user.avatar_color });
@@ -160,23 +169,78 @@ async function startServer() {
     }
   });
 
-  app.get("/api/user/:id", (req, res) => {
-    const user = db.prepare("SELECT id, email, name, avatar_color FROM users WHERE id = ?").get(req.params.id) as any;
+  app.get("/api/user/:id", async (req, res) => {
+    const { data: user, error } = await supabase
+      .from('profiles')
+      .select('id, email, name, avatar_color')
+      .eq('id', req.params.id)
+      .single();
+    
     if (user) {
-      res.json(user);
+      res.json({ ...user, avatarColor: user.avatar_color });
     } else {
       res.status(404).json({ error: "User not found" });
     }
   });
 
-  app.patch("/api/user/:id", (req, res) => {
+  app.patch("/api/user/:id", async (req, res) => {
     const { name } = req.body;
     try {
-      db.prepare("UPDATE users SET name = ? WHERE id = ?").run(name, req.params.id);
+      const { error } = await supabase
+        .from('profiles')
+        .update({ name })
+        .eq('id', req.params.id);
+      
+      if (error) throw error;
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
+  });
+
+  // Notes and Files Routes
+  app.get("/api/notes/:userId", async (req, res) => {
+    const { data: notes, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('user_id', req.params.userId);
+    
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(notes);
+  });
+
+  app.post("/api/notes", async (req, res) => {
+    const { userId, content, title } = req.body;
+    const { data: note, error } = await supabase
+      .from('notes')
+      .insert([{ user_id: userId, content, title }])
+      .select()
+      .single();
+    
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(note);
+  });
+
+  app.get("/api/files/:userId", async (req, res) => {
+    const { data: files, error } = await supabase
+      .from('files')
+      .select('*')
+      .eq('user_id', req.params.userId);
+    
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(files);
+  });
+
+  app.post("/api/files", async (req, res) => {
+    const { userId, name, size, type, url } = req.body;
+    const { data: file, error } = await supabase
+      .from('files')
+      .insert([{ user_id: userId, name, size, type, url }])
+      .select()
+      .single();
+    
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(file);
   });
 
   // Vite middleware for development
@@ -188,14 +252,25 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     app.use(express.static(path.join(__dirname, "dist")));
-    app.get("*", (req, res) => {
+    // Only serve index.html if not an API/Auth route (handled by Vercel routes)
+    app.get(/^(?!\/(api|auth)).*$/, (req, res) => {
       res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  // Only call listen if not running in a serverless environment (like Vercel)
+  if (process.env.VERCEL !== '1') {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
+  
+  return app;
 }
 
-startServer();
+const appPromise = startServer();
+
+export default async (req: any, res: any) => {
+  const app = await appPromise;
+  return app(req, res);
+};

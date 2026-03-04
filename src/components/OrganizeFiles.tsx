@@ -44,7 +44,7 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
     setFiles(prev => prev.filter(f => f.id !== id));
   };
 
-  const handleFiles = (selectedFiles: FileList | File[]) => {
+  const handleFiles = async (selectedFiles: FileList | File[]) => {
     const newFiles: FileItem[] = Array.from(selectedFiles).map(file => ({
       id: Math.random().toString(36).substr(2, 9),
       name: file.name,
@@ -58,6 +58,27 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
     }));
 
     setFiles(prev => [...prev, ...newFiles]);
+
+    // Save to Supabase if user is logged in
+    if (user) {
+      for (const fileItem of newFiles) {
+        try {
+          await fetch('/api/files', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              name: fileItem.name,
+              size: fileItem.size,
+              type: fileItem.type,
+              url: '#' // In a real app, you'd upload to Supabase Storage first
+            }),
+          });
+        } catch (error) {
+          console.error('Error saving file to Supabase:', error);
+        }
+      }
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {

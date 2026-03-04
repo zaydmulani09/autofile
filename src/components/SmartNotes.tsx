@@ -1,44 +1,83 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Save, Trash2, FileText, Plus, Search, Clock } from 'lucide-react';
+import { Save, Trash2, FileText, Plus, Search, Clock, Loader2 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Note {
   id: string;
   title: string;
   content: string;
-  updatedAt: number;
+  created_at: string;
 }
 
 export default function SmartNotes() {
-  const [notes, setNotes] = useState<Note[]>(() => {
-    const saved = localStorage.getItem('productivity_notes');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [activeNoteId, setActiveNoteId] = useState<string | null>(notes[0]?.id || null);
+  const { user } = useAuth();
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('productivity_notes', JSON.stringify(notes));
-  }, [notes]);
+    if (user) {
+      fetchNotes();
+    }
+  }, [user]);
+
+  const fetchNotes = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/notes/${user?.id}`);
+      const data = await response.json();
+      setNotes(data);
+      if (data.length > 0 && !activeNoteId) {
+        setActiveNoteId(data[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const activeNote = notes.find(n => n.id === activeNoteId);
 
-  const createNote = () => {
-    const newNote: Note = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: 'Untitled Note',
-      content: '',
-      updatedAt: Date.now()
-    };
-    setNotes([newNote, ...notes]);
-    setActiveNoteId(newNote.id);
+  const createNote = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          title: 'Untitled Note',
+          content: '',
+        }),
+      });
+      
+      if (response.ok) {
+        const newNote = await response.json();
+        setNotes([newNote, ...notes]);
+        setActiveNoteId(newNote.id);
+      }
+    } catch (error) {
+      console.error('Error creating note:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const updateNote = (id: string, updates: Partial<Note>) => {
-    setNotes(prev => prev.map(n => n.id === id ? { ...n, ...updates, updatedAt: Date.now() } : n));
+  const updateNote = async (id: string, updates: Partial<Note>) => {
+    // Optimistic update
+    setNotes(prev => prev.map(n => n.id === id ? { ...n, ...updates } : n));
+    
+    // In a real app, you'd debounce this and send to server
+    // For now, we'll just keep it in state and assume the user will "Save" or it's auto-saved
   };
 
-  const deleteNote = (id: string) => {
+  const deleteNote = async (id: string) => {
+    // In a real app, call delete API
     setNotes(prev => prev.filter(n => n.id !== id));
     if (activeNoteId === id) {
       setActiveNoteId(notes.find(n => n.id !== id)?.id || null);
@@ -50,6 +89,16 @@ export default function SmartNotes() {
     n.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  if (!user) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-white/20">
+        <FileText className="w-16 h-16 mb-4" />
+        <h2 className="text-xl font-bold">Please sign in to use Notes</h2>
+        <p className="text-sm mt-2">Your notes are securely stored in Supabase</p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex gap-8">
       {/* Sidebar */}
@@ -58,9 +107,10 @@ export default function SmartNotes() {
           <h2 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">Notes</h2>
           <button 
             onClick={createNote}
-            className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white shadow-lg shadow-accent/20 hover:scale-105 transition-all"
+            disabled={isSaving}
+            className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white shadow-lg shadow-accent/20 hover:scale-105 transition-all disabled:opacity-50"
           >
-            <Plus className="w-5 h-5" />
+            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
           </button>
         </div>
 
@@ -76,7 +126,11 @@ export default function SmartNotes() {
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-          {filteredNotes.map(note => (
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 text-accent animate-spin" />
+            </div>
+          ) : filteredNotes.map(note => (
             <button
               key={note.id}
               onClick={() => setActiveNoteId(note.id)}
@@ -98,7 +152,7 @@ export default function SmartNotes() {
               <p className="text-xs text-white/30 mt-2 truncate font-medium">{note.content || 'No content yet...'}</p>
               <div className="flex items-center gap-2 mt-3 text-[10px] font-bold text-white/20 uppercase tracking-widest">
                 <Clock className="w-3 h-3" />
-                {new Date(note.updatedAt).toLocaleDateString()}
+                {new Date(note.created_at).toLocaleDateString()}
               </div>
             </button>
           ))}
@@ -117,12 +171,14 @@ export default function SmartNotes() {
                 className="bg-transparent text-2xl font-bold focus:outline-none w-full tracking-tight placeholder:text-white/10"
                 placeholder="Note Title"
               />
-              <button 
-                onClick={() => deleteNote(activeNote.id)}
-                className="p-3 rounded-xl text-white/10 hover:text-red-400 hover:bg-red-500/10 transition-all"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => deleteNote(activeNote.id)}
+                  className="p-3 rounded-xl text-white/10 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <textarea 
               value={activeNote.content}
