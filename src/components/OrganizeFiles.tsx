@@ -22,6 +22,7 @@ import {
 import JSZip from 'jszip';
 import { FileItem } from '../types';
 import { formatBytes, cn } from '../utils';
+import { useAuth } from '../contexts/AuthContext';
 
 interface OrganizeFilesProps {
   files: FileItem[];
@@ -30,6 +31,7 @@ interface OrganizeFilesProps {
 }
 
 export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: OrganizeFilesProps) {
+  const { user } = useAuth();
   const [isDragging, setIsDragging] = useState(false);
   const [organizeBy, setOrganizeBy] = useState<'type' | 'date' | 'size'>('type');
   const [renamePattern, setRenamePattern] = useState('');
@@ -218,10 +220,15 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
 
   return (
     <div className="space-y-10">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-white/10 pb-8">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">Organize Workspace</h1>
-          <p className="text-white/40 mt-2 text-lg">Automatically sort your files into a clean, logical structure.</p>
+          <div className="flex items-center gap-2 mb-2 opacity-60">
+            <div className="w-8 h-px bg-white"></div>
+            <span className="text-white text-[10px] font-mono tracking-wider">002</span>
+            <div className="flex-1 h-px bg-white"></div>
+          </div>
+          <h1 className="text-4xl font-bold tracking-widest uppercase italic transform -skew-x-12">Organize Workspace</h1>
+          <p className="text-white/40 mt-4 text-sm font-mono uppercase tracking-widest">Automatically sort your files into a clean, logical structure.</p>
         </div>
         <div className="flex items-center gap-3">
           {files.length > 0 && (
@@ -230,7 +237,7 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
                 onClick={() => setFiles([])}
                 className="btn-secondary flex items-center gap-2"
               >
-                <X className="w-4 h-4" /> Clear
+                <X className="w-3 h-3" /> Clear
               </button>
               <button 
                 onClick={handleDownloadOrganized}
@@ -238,9 +245,9 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
                 className="btn-secondary flex items-center gap-2"
               >
                 {isDownloading ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="w-3 h-3 animate-spin" />
                 ) : (
-                  <FolderPlus className="w-4 h-4" />
+                  <FolderPlus className="w-3 h-3" />
                 )}
                 Download ZIP
               </button>
@@ -248,7 +255,7 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
                 onClick={() => setIsPreviewMode(true)}
                 className="btn-primary flex items-center gap-2"
               >
-                <Zap className="w-4 h-4" /> Organize Now
+                <Zap className="w-3 h-3" /> Organize Now
               </button>
             </>
           )}
@@ -274,19 +281,22 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
             className={cn(
-              "glass-panel border-2 border-dashed p-10 flex flex-col items-center justify-center text-center transition-all cursor-pointer group",
-              isDragging ? "border-accent bg-accent/5 scale-[0.98]" : "border-white/10 hover:border-white/20"
+              "glass-panel border-2 border-dashed p-10 flex flex-col items-center justify-center text-center transition-all cursor-pointer group rounded-none relative overflow-hidden",
+              isDragging ? "border-white bg-white/5 scale-[0.98]" : "border-white/10 hover:border-white/20"
             )}
           >
-            <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Upload className={cn("w-10 h-10 transition-colors", isDragging ? "text-accent" : "text-white/20")} />
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20 group-hover:border-white/60 transition-colors" />
+            <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/20 group-hover:border-white/60 transition-colors" />
+            
+            <div className="w-16 h-16 rounded-none bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform border border-white/10">
+              <Upload className={cn("w-8 h-8 transition-colors", isDragging ? "text-white" : "text-white/20")} />
             </div>
-            <h3 className="text-xl font-bold tracking-tight">Drop files or folders</h3>
-            <p className="text-white/40 mt-3 max-w-xs text-sm font-medium">
-              We'll scan your selection and prepare them for organization.
+            <h3 className="text-lg font-bold tracking-widest uppercase font-mono">Drop files or folders</h3>
+            <p className="text-white/40 mt-3 max-w-xs text-[10px] font-mono uppercase tracking-widest">
+              Scan selection / Prepare organization
             </p>
             <div className="mt-8 flex flex-col w-full gap-3">
-              <button className="w-full py-3 rounded-2xl bg-white text-charcoal font-bold text-sm hover:bg-white/90 transition-all shadow-xl shadow-white/5">
+              <button className="w-full py-3 rounded-none bg-white text-black font-bold text-[10px] tracking-widest uppercase hover:bg-white/90 transition-all shadow-xl shadow-white/5 font-mono">
                 Select Files
               </button>
               <button 
@@ -298,7 +308,7 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
                   input.onchange = (ev: any) => handleFiles(ev.target.files);
                   input.click();
                 }}
-                className="w-full py-3 rounded-2xl bg-white/5 border border-white/10 font-bold text-sm hover:bg-white/10 transition-all"
+                className="w-full py-3 rounded-none bg-white/5 border border-white/10 font-bold text-[10px] tracking-widest uppercase hover:bg-white/10 transition-all font-mono"
               >
                 Select Folder
               </button>
@@ -306,59 +316,60 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
           </div>
 
           {/* Options */}
-          <div className="glass-panel p-8 space-y-8">
+          <div className="glass-panel p-8 space-y-8 rounded-none relative">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                <Filter className="w-5 h-5 text-accent" />
+              <div className="w-10 h-10 rounded-none bg-white/5 border border-white/10 flex items-center justify-center">
+                <Filter className="w-4 h-4 text-white" />
               </div>
-              <h3 className="font-bold text-lg">Organization Rules</h3>
+              <h3 className="font-bold text-lg uppercase tracking-widest font-mono">Organization Rules</h3>
             </div>
             
             <div className="space-y-6">
               <div className="space-y-3">
-                <label className="text-xs font-bold text-white/30 uppercase tracking-[0.2em]">Organize By</label>
+                <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] font-mono">Organize By</label>
                 <div className="relative">
                   <select 
                     value={organizeBy}
                     onChange={(e) => setOrganizeBy(e.target.value as any)}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-bold"
+                    className="w-full bg-white/5 border border-white/10 rounded-none px-5 py-4 text-[10px] font-mono uppercase tracking-widest appearance-none focus:outline-none focus:ring-1 focus:ring-white/50 transition-all font-bold"
                   >
                     <option value="type">File Type (Extension)</option>
                     <option value="date">Date (Year/Month)</option>
                     <option value="size">Size (Small/Large)</option>
                   </select>
-                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
+                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/20 pointer-events-none" />
                 </div>
               </div>
 
               <div className="space-y-3">
-                <label className="text-xs font-bold text-white/30 uppercase tracking-[0.2em]">Naming Conflict</label>
+                <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] font-mono">Naming Conflict</label>
                 <div className="relative">
-                  <select className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-bold">
+                  <select className="w-full bg-white/5 border border-white/10 rounded-none px-5 py-4 text-[10px] font-mono uppercase tracking-widest appearance-none focus:outline-none focus:ring-1 focus:ring-white/50 transition-all font-bold">
                     <option>Add Suffix (e.g. file_1.pdf)</option>
                     <option>Skip Existing</option>
                     <option>Overwrite</option>
                   </select>
-                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
+                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/20 pointer-events-none" />
                 </div>
               </div>
 
               <div className="pt-4 border-t border-white/5 space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Type className="w-5 h-5 text-white/30" />
-                    <span className="text-sm font-bold text-white/60">Bulk Rename</span>
+                    <Type className="w-4 h-4 text-white/30" />
+                    <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest font-mono">Bulk Rename</span>
                   </div>
                   <button 
                     onClick={() => setUseRenaming(!useRenaming)}
                     className={cn(
-                      "w-12 h-6 rounded-full transition-all relative",
-                      useRenaming ? "bg-accent" : "bg-white/10"
+                      "w-10 h-5 rounded-none transition-all relative",
+                      useRenaming ? "bg-white" : "bg-white/10"
                     )}
                   >
                     <motion.div 
-                      animate={{ x: useRenaming ? 26 : 2 }}
-                      className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg"
+                      animate={{ x: useRenaming ? 22 : 2 }}
+                      className={cn("absolute top-1 w-3 h-3 rounded-none shadow-lg", useRenaming ? "bg-black" : "bg-white")}
                     />
                   </button>
                 </div>
@@ -369,13 +380,13 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
                     animate={{ opacity: 1, height: 'auto' }}
                     className="space-y-3"
                   >
-                    <label className="text-xs font-bold text-white/30 uppercase tracking-[0.2em]">Rename Pattern</label>
+                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] font-mono">Rename Pattern</label>
                     <input 
                       type="text" 
                       value={renamePattern}
                       onChange={(e) => setRenamePattern(e.target.value)}
-                      placeholder="e.g. Organized_File"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-bold"
+                      placeholder="E.G. ORGANIZED_FILE"
+                      className="w-full bg-white/5 border border-white/10 rounded-none px-5 py-4 text-[10px] font-mono uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-white/50 transition-all font-bold"
                     />
                   </motion.div>
                 )}
@@ -386,30 +397,31 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
 
         {/* Right Column: File List */}
         <div className="lg:col-span-8">
-          <div className="glass-panel h-full flex flex-col overflow-hidden">
+          <div className="glass-panel h-full flex flex-col overflow-hidden rounded-none relative">
+            <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/20" />
             <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/2">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-emerald-500" />
+                <div className="w-10 h-10 rounded-none bg-white/5 border border-white/10 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-white" />
                 </div>
-                <h3 className="font-bold text-lg">Workspace Files</h3>
+                <h3 className="font-bold text-lg uppercase tracking-widest font-mono">Workspace Files</h3>
               </div>
               <div className="flex items-center gap-3">
-                <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                <span className="px-3 py-1 rounded-none bg-white/5 border border-white/10 text-[8px] font-bold text-white/40 uppercase tracking-widest font-mono">
                   {files.length} Total
                 </span>
-                <div className="flex bg-white/5 rounded-lg p-1 border border-white/5">
+                <div className="flex bg-white/5 rounded-none p-1 border border-white/5">
                   <button 
                     onClick={() => setViewMode('list')}
-                    className={cn("p-1.5 rounded-md transition-all", viewMode === 'list' ? "bg-white/10 text-white" : "text-white/20 hover:text-white/40")}
+                    className={cn("p-1.5 rounded-none transition-all", viewMode === 'list' ? "bg-white/10 text-white" : "text-white/20 hover:text-white/40")}
                   >
-                    <Filter className="w-4 h-4" />
+                    <Filter className="w-3 h-3" />
                   </button>
                   <button 
                     onClick={() => setViewMode('grid')}
-                    className={cn("p-1.5 rounded-md transition-all", viewMode === 'grid' ? "bg-white/10 text-white" : "text-white/20 hover:text-white/40")}
+                    className={cn("p-1.5 rounded-none transition-all", viewMode === 'grid' ? "bg-white/10 text-white" : "text-white/20 hover:text-white/40")}
                   >
-                    <Folder className="w-4 h-4" />
+                    <Folder className="w-3 h-3" />
                   </button>
                 </div>
               </div>
@@ -418,9 +430,9 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
             <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
               {files.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center opacity-20">
-                  <Folder className="w-20 h-20 mb-4" />
-                  <p className="font-bold text-xl tracking-tight">No files in workspace</p>
-                  <p className="text-sm mt-2">Upload files to start organizing</p>
+                  <Folder className="w-16 h-16 mb-4" />
+                  <p className="font-bold text-lg uppercase tracking-widest font-mono">No files in workspace</p>
+                  <p className="text-[10px] mt-2 font-mono uppercase tracking-widest">Upload files to start organizing</p>
                 </div>
               ) : (
                 <div className={cn(
@@ -433,8 +445,8 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
                       className={cn(
                         "group transition-all border border-transparent hover:border-white/10",
                         viewMode === 'grid' 
-                          ? "glass-panel p-5 flex flex-col items-center text-center" 
-                          : "flex items-center justify-between p-4 rounded-2xl bg-white/5"
+                          ? "glass-panel p-5 flex flex-col items-center text-center rounded-none" 
+                          : "flex items-center justify-between p-4 rounded-none bg-white/5"
                       )}
                     >
                       <div className={cn(
@@ -442,22 +454,22 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
                         viewMode === 'grid' ? "flex-col" : "flex-row"
                       )}>
                         <div className={cn(
-                          "rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform border border-white/5",
-                          viewMode === 'grid' ? "w-16 h-16 mb-3" : "w-12 h-12"
+                          "rounded-none bg-white/5 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform border border-white/5",
+                          viewMode === 'grid' ? "w-14 h-14 mb-3" : "w-10 h-10"
                         )}>
-                          {file.type.includes('image') ? <ImageIcon className="w-6 h-6 text-blue-400" /> : 
-                           file.type.includes('code') ? <FileCode className="w-6 h-6 text-emerald-400" /> :
-                           <FileText className="w-6 h-6 text-white/20" />}
+                          {file.type.includes('image') ? <ImageIcon className="w-4 h-4 text-white/60" /> : 
+                           file.type.includes('code') ? <FileCode className="w-4 h-4 text-white/60" /> :
+                           <FileText className="w-4 h-4 text-white/20" />}
                         </div>
                         <div className={cn(
                           "min-w-0",
                           viewMode === 'grid' ? "w-full" : ""
                         )}>
-                          <p className="text-sm font-bold truncate tracking-tight">{file.name}</p>
+                          <p className="text-[10px] font-bold truncate tracking-widest uppercase font-mono">{file.name}</p>
                           {useRenaming && renamePattern && file.path === '/Uploaded' && (
                             <div className="flex items-center gap-2 mt-0.5">
-                              <ArrowRight className="w-3 h-3 text-accent" />
-                              <p className="text-[10px] font-bold text-accent truncate">
+                              <ArrowRight className="w-3 h-3 text-white/60" />
+                              <p className="text-[8px] font-bold text-white/60 truncate font-mono uppercase tracking-widest">
                                 {renamePattern}_{(files.indexOf(file) + 1).toString().padStart(2, '0')}.{file.extension}
                               </p>
                             </div>
@@ -466,9 +478,9 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
                             "flex items-center gap-2 mt-1",
                             viewMode === 'grid' ? "justify-center" : ""
                           )}>
-                            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">{formatBytes(file.size)}</span>
-                            <span className="w-1 h-1 rounded-full bg-white/10" />
-                            <span className="text-[10px] font-bold text-accent uppercase tracking-widest truncate max-w-[100px]">{file.path}</span>
+                            <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest font-mono">{formatBytes(file.size)}</span>
+                            <span className="w-1 h-1 rounded-none bg-white/10" />
+                            <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest truncate max-w-[100px] font-mono">{file.path}</span>
                           </div>
                         </div>
                       </div>
@@ -478,9 +490,9 @@ export default function OrganizeFiles({ files, setFiles, onNavigateToRename }: O
                       )}>
                         <button 
                           onClick={() => removeFile(file.id)}
-                          className="p-2.5 rounded-xl text-white/10 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                          className="p-2 rounded-none text-white/10 hover:text-white hover:bg-white/5 transition-all opacity-0 group-hover:opacity-100 border border-transparent hover:border-white/10"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     </div>

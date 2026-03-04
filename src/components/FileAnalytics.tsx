@@ -66,22 +66,28 @@ export default function FileAnalytics({ files, setFiles }: FileAnalyticsProps) {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight">File Analytics</h1>
-        <p className="text-white/40 mt-1">Deep insights into your storage distribution and file habits.</p>
+      <header className="border-b border-white/10 pb-8">
+        <div className="flex items-center gap-2 mb-2 opacity-60">
+          <div className="w-8 h-px bg-white"></div>
+          <span className="text-white text-[10px] font-mono tracking-wider">009</span>
+          <div className="flex-1 h-px bg-white"></div>
+        </div>
+        <h1 className="text-4xl font-bold tracking-widest uppercase italic transform -skew-x-12">Data Intelligence</h1>
+        <p className="text-white/40 mt-4 text-sm font-mono uppercase tracking-widest">Deep insights into your storage distribution and file habits.</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Stats */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="glass-panel p-6">
+          <div className="glass-panel p-8 rounded-none relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
             <div className="flex items-center justify-between mb-8">
-              <h3 className="font-bold text-lg">File Growth</h3>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1 text-emerald-400 text-sm font-bold">
-                  <ArrowUpRight className="w-4 h-4" /> +12%
+              <h3 className="font-bold text-lg uppercase tracking-widest font-mono italic">File Growth</h3>
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2 text-white text-[10px] font-mono font-bold uppercase tracking-widest">
+                  <ArrowUpRight className="w-3 h-3" /> +12% DELTA
                 </div>
-                <select className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-xs focus:outline-none">
+                <select className="bg-white/5 border border-white/10 rounded-none px-4 py-2 text-[10px] font-mono uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-white/50 transition-all font-bold">
                   <option>Last 6 Months</option>
                   <option>Last Year</option>
                 </select>
@@ -94,88 +100,92 @@ export default function FileAnalytics({ files, setFiles }: FileAnalyticsProps) {
                   <XAxis 
                     dataKey="name" 
                     stroke="#ffffff20" 
-                    fontSize={12} 
+                    fontSize={10} 
                     tickLine={false} 
-                    axisLine={false} 
+                    axisLine={false}
+                    fontFamily="JetBrains Mono"
                   />
                   <YAxis 
                     stroke="#ffffff20" 
-                    fontSize={12} 
+                    fontSize={10} 
                     tickLine={false} 
-                    axisLine={false} 
+                    axisLine={false}
+                    fontFamily="JetBrains Mono"
                   />
                   <Tooltip 
                     cursor={{ fill: '#ffffff05' }}
-                    contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #ffffff10', borderRadius: '8px' }}
+                    contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '0px', fontFamily: 'JetBrains Mono', fontSize: '10px', textTransform: 'uppercase' }}
                   />
-                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" fill="#ffffff" radius={[0, 0, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="glass-panel p-6">
-              <h3 className="font-bold mb-4">Oldest Files</h3>
-              <div className="space-y-4">
+            <div className="glass-panel p-8 rounded-none relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
+              <h3 className="font-bold mb-6 uppercase tracking-widest font-mono italic text-sm">Oldest Files</h3>
+              <div className="space-y-6">
                 {oldestFiles.length > 0 ? oldestFiles.map((file) => (
-                  <div key={file.id} className="flex items-center justify-between group cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center">
+                  <div key={file.id} className="flex items-center justify-between group cursor-pointer border-b border-white/5 pb-4 last:border-0">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-none bg-white/5 border border-white/10 flex items-center justify-center">
                         <Calendar className="w-4 h-4 text-white/40" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium truncate max-w-[150px]">{file.name}</p>
-                        <p className="text-[10px] text-white/40 uppercase tracking-wider">
-                          Modified {new Date(file.lastModified).toLocaleDateString()}
+                        <p className="text-[10px] font-bold uppercase tracking-widest font-mono truncate max-w-[150px]">{file.name}</p>
+                        <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] font-mono mt-1">
+                          MODIFIED {new Date(file.lastModified).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => removeFile(file.id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-white/20 hover:text-red-400"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-white/20 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ArrowUpRight className="w-4 h-4 text-accent" />
+                      <button className="opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-white/10">
+                        <ArrowUpRight className="w-4 h-4 text-white" />
                       </button>
                     </div>
                   </div>
                 )) : (
-                  <p className="text-sm text-white/20 italic">No files loaded yet</p>
+                  <p className="text-[10px] text-white/20 uppercase tracking-widest font-mono italic">No files loaded yet</p>
                 )}
               </div>
             </div>
-            <div className="glass-panel p-6">
-              <h3 className="font-bold mb-4">Largest Files</h3>
-              <div className="space-y-4">
+            <div className="glass-panel p-8 rounded-none relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
+              <h3 className="font-bold mb-6 uppercase tracking-widest font-mono italic text-sm">Largest Files</h3>
+              <div className="space-y-6">
                 {largestFiles.length > 0 ? largestFiles.map((file) => (
-                  <div key={file.id} className="flex items-center justify-between group cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center">
+                  <div key={file.id} className="flex items-center justify-between group cursor-pointer border-b border-white/5 pb-4 last:border-0">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-none bg-white/5 border border-white/10 flex items-center justify-center">
                         <HardDrive className="w-4 h-4 text-white/40" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium truncate max-w-[150px]">{file.name}</p>
-                        <p className="text-[10px] text-white/40 uppercase tracking-wider">{formatBytes(file.size)}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest font-mono truncate max-w-[150px]">{file.name}</p>
+                        <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] font-mono mt-1">{formatBytes(file.size)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => removeFile(file.id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-white/20 hover:text-red-400"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-white/20 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ArrowUpRight className="w-4 h-4 text-accent" />
+                      <button className="opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-white/10">
+                        <ArrowUpRight className="w-4 h-4 text-white" />
                       </button>
                     </div>
                   </div>
                 )) : (
-                  <p className="text-sm text-white/20 italic">No files loaded yet</p>
+                  <p className="text-[10px] text-white/20 uppercase tracking-widest font-mono italic">No files loaded yet</p>
                 )}
               </div>
             </div>
@@ -184,8 +194,9 @@ export default function FileAnalytics({ files, setFiles }: FileAnalyticsProps) {
 
         {/* Sidebar Stats */}
         <div className="space-y-6">
-          <div className="glass-panel p-6">
-            <h3 className="font-bold mb-6">Type Distribution</h3>
+          <div className="glass-panel p-8 rounded-none relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
+            <h3 className="font-bold mb-8 uppercase tracking-widest font-mono italic text-sm">Type Distribution</h3>
             <div className="h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -199,26 +210,26 @@ export default function FileAnalytics({ files, setFiles }: FileAnalyticsProps) {
                     dataKey="value"
                   >
                     {fileTypeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                      <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#ffffff' : '#ffffff20'} stroke="none" />
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #ffffff10', borderRadius: '8px' }}
+                    contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '0px', fontFamily: 'JetBrains Mono', fontSize: '10px', textTransform: 'uppercase' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="space-y-3 mt-6">
+            <div className="space-y-4 mt-8">
               {fileTypeData.map((type) => (
-                <div key={type.name} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
+                <div key={type.name} className="space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest">
                     <span className="text-white/60">{type.name}</span>
                     <span className="font-bold">{type.percentage}%</span>
                   </div>
-                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1 w-full bg-white/5 rounded-none overflow-hidden">
                     <div 
-                      className="h-full rounded-full" 
-                      style={{ width: `${type.percentage}%`, backgroundColor: type.color }} 
+                      className="h-full rounded-none bg-white" 
+                      style={{ width: `${type.percentage}%` }} 
                     />
                   </div>
                 </div>
@@ -226,13 +237,14 @@ export default function FileAnalytics({ files, setFiles }: FileAnalyticsProps) {
             </div>
           </div>
 
-          <div className="glass-panel p-6 bg-accent/5 border-accent/20">
-            <TrendingUp className="w-6 h-6 text-accent mb-4" />
-            <h3 className="font-bold mb-2">Optimization Tip</h3>
-            <p className="text-sm text-white/60 leading-relaxed">
+          <div className="glass-panel p-8 bg-white/5 border-white/20 rounded-none relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/40" />
+            <TrendingUp className="w-6 h-6 text-white mb-6" />
+            <h3 className="font-bold mb-4 uppercase tracking-widest font-mono italic text-sm">Optimization Tip</h3>
+            <p className="text-[10px] text-white/60 leading-relaxed font-mono uppercase tracking-widest">
               You have over <span className="text-white font-bold">{formatBytes(totalSize * 0.15)}</span> of temporary files that haven't been accessed in 6 months. Running a cleanup could save significant space.
             </p>
-            <button className="mt-4 w-full py-2 rounded-xl bg-accent text-white text-sm font-bold hover:bg-accent-hover transition-all">
+            <button className="mt-8 w-full py-4 rounded-none bg-white text-black text-[10px] font-bold uppercase tracking-widest font-mono hover:bg-white/90 transition-all">
               Optimize Now
             </button>
           </div>

@@ -82,23 +82,26 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="relative w-full max-w-md glass-panel p-8 space-y-8"
+        className="relative w-full max-w-md bg-black border border-white/10 p-10 space-y-10 rounded-none overflow-hidden"
       >
+        <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/20" />
+        
         <button 
           onClick={onClose}
-          className="absolute right-4 top-4 text-white/40 hover:text-white transition-colors"
+          className="absolute right-6 top-6 text-white/20 hover:text-white transition-colors border border-white/10 p-2 rounded-none"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-accent/20 mb-4">
-            <Zap className="w-6 h-6 text-white" />
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 bg-white rounded-none flex items-center justify-center mx-auto shadow-xl shadow-white/5 mb-6">
+            <Zap className="w-6 h-6 text-black" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
+          <h2 className="text-2xl font-bold tracking-widest uppercase italic transform -skew-x-12 font-mono">
+            {isLogin ? 'Access System' : 'Initialize Account'}
           </h2>
-          <p className="text-white/40 text-sm">
-            {isLogin ? 'Enter your credentials to access your files.' : 'Join AutoFile Pro to organize your digital life.'}
+          <p className="text-white/40 text-[10px] font-mono uppercase tracking-widest leading-relaxed">
+            {isLogin ? 'Enter credentials to authorize workspace access.' : 'Register unique identifier for digital asset management.'}
           </p>
         </div>
 
@@ -106,81 +109,81 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 text-red-400 text-sm"
+            className="p-4 rounded-none bg-white/5 border border-white/10 flex items-center gap-4 text-white text-[10px] font-mono uppercase tracking-widest"
           >
-            <AlertCircle className="w-5 h-5" />
+            <AlertCircle className="w-4 h-4" />
             <span>{error}</span>
           </motion.div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <button 
             type="button"
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+            className="w-full py-4 rounded-none bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] font-mono font-bold uppercase tracking-widest flex items-center justify-center gap-4 transition-all disabled:opacity-50"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              <path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+              <path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
             Continue with Google
           </button>
 
-          <div className="relative py-4">
+          <div className="relative py-2">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-white/5"></div>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-panel px-2 text-white/20 font-bold tracking-widest">Or continue with email</span>
+            <div className="relative flex justify-center text-[8px] uppercase">
+              <span className="bg-black px-4 text-white/20 font-bold tracking-[0.5em] font-mono">OR_EMAIL_AUTH</span>
             </div>
           </div>
 
           {!isLogin && (
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-white/40 uppercase tracking-wider">Full Name</label>
+            <div className="space-y-3">
+              <label className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em] font-mono">Full Name</label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 text-white/20" />
                 <input 
                   type="text" 
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="John Doe"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  placeholder="USER_NAME"
+                  className="w-full bg-white/5 border border-white/10 rounded-none pl-12 pr-4 py-4 text-[10px] font-mono uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-white/50 transition-all font-bold"
                 />
               </div>
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-white/40 uppercase tracking-wider">Email Address</label>
+          <div className="space-y-3">
+            <label className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em] font-mono">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 text-white/20" />
               <input 
                 type="email" 
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="john@example.com"
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                placeholder="USER@DOMAIN.COM"
+                className="w-full bg-white/5 border border-white/10 rounded-none pl-12 pr-4 py-4 text-[10px] font-mono uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-white/50 transition-all font-bold"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-white/40 uppercase tracking-wider">Password</label>
+          <div className="space-y-3">
+            <label className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em] font-mono">Password</label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 text-white/20" />
               <input 
                 type="password" 
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-white/5 border border-white/10 rounded-none pl-12 pr-4 py-4 text-[10px] font-mono uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-white/50 transition-all font-bold"
               />
             </div>
           </div>
@@ -188,12 +191,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <button 
             type="submit"
             disabled={isLoading}
-            className="w-full py-4 rounded-2xl bg-accent hover:bg-accent-hover text-white font-bold shadow-lg shadow-accent/20 transition-all disabled:opacity-50 mt-4"
+            className="w-full py-5 rounded-none bg-white text-black text-[10px] font-mono font-bold uppercase tracking-widest shadow-xl shadow-white/5 transition-all disabled:opacity-50 mt-4 hover:scale-[1.02] active:scale-[0.98]"
           >
             {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+              <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin mx-auto" />
             ) : (
-              isLogin ? 'Sign In' : 'Create Account'
+              isLogin ? 'Authorize Access' : 'Initialize Account'
             )}
           </button>
         </form>
@@ -204,9 +207,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               setIsLogin(!isLogin);
               setError('');
             }}
-            className="text-sm text-white/40 hover:text-white transition-colors"
+            className="text-[10px] font-mono uppercase tracking-widest text-white/20 hover:text-white transition-colors"
           >
-            {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+            {isLogin ? "No account? Initialize here" : "Existing account? Authorize here"}
           </button>
         </div>
       </motion.div>

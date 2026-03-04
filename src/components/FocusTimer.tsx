@@ -56,28 +56,36 @@ export default function FocusTimer() {
   return (
     <div className="h-full flex flex-col items-center justify-center max-w-3xl mx-auto py-10">
       <div className="text-center mb-12">
-        <h2 className="text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">Focus Timer</h2>
-        <p className="text-white/40 mt-3 text-lg font-medium">Boost your productivity with the Pomodoro technique</p>
+        <div className="flex items-center justify-center gap-2 mb-4 opacity-60">
+          <div className="w-8 h-px bg-white"></div>
+          <span className="text-white text-[10px] font-mono tracking-wider italic">CHRONOS_V1.0</span>
+          <div className="w-8 h-px bg-white"></div>
+        </div>
+        <h2 className="text-4xl font-bold tracking-widest uppercase italic transform -skew-x-12">Temporal Control</h2>
+        <p className="text-white/40 mt-4 text-[10px] font-mono uppercase tracking-widest">Optimize cognitive output via rhythmic interval management.</p>
       </div>
 
-      <div className="glass-panel p-16 w-full flex flex-col items-center relative overflow-hidden rounded-[3rem]">
+      <div className="glass-panel p-16 w-full flex flex-col items-center relative overflow-hidden rounded-none border-white/10">
+        <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/20" />
+        
         {/* Progress Background */}
         <motion.div 
-          className="absolute bottom-0 left-0 w-full bg-accent/10"
+          className="absolute bottom-0 left-0 w-full bg-white/5 border-t border-white/10"
           initial={{ height: 0 }}
           animate={{ height: `${progress * 100}%` }}
           transition={{ duration: 0.5 }}
         />
 
-        <div className="flex gap-3 mb-16 relative z-10 bg-white/5 p-1.5 rounded-2xl border border-white/5">
+        <div className="flex gap-4 mb-16 relative z-10 bg-white/2 p-2 rounded-none border border-white/5">
           {(Object.keys(MODES) as TimerMode[]).map((m) => (
             <button
               key={m}
               onClick={() => changeMode(m)}
-              className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              className={`px-8 py-3 rounded-none text-[10px] font-mono font-bold uppercase tracking-widest transition-all ${
                 mode === m 
-                  ? 'bg-white/10 text-white shadow-xl ring-1 ring-white/20' 
-                  : 'text-white/30 hover:text-white/60'
+                  ? 'bg-white text-black shadow-xl' 
+                  : 'text-white/30 hover:text-white/60 hover:bg-white/5'
               }`}
             >
               {MODES[m].label}
@@ -86,30 +94,38 @@ export default function FocusTimer() {
         </div>
 
         <div className="relative mb-16 z-10">
+          <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-[8px] font-mono text-white/20 tracking-[0.5em] uppercase">
+            System_Clock_Active
+          </div>
           <motion.div 
             key={timeLeft}
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.98, opacity: 0.8 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="text-[10rem] font-mono font-bold tracking-tighter leading-none text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+            className="text-[10rem] font-mono font-bold tracking-tighter leading-none text-white italic transform -skew-x-6"
           >
             {formatTime(timeLeft)}
           </motion.div>
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-4">
+            <div className="w-1 h-1 bg-white/20" />
+            <div className="w-1 h-1 bg-white/20" />
+            <div className="w-1 h-1 bg-white/20" />
+          </div>
         </div>
 
-        <div className="flex gap-6 relative z-10">
+        <div className="flex gap-8 relative z-10">
           <button
             onClick={toggleTimer}
-            className={`w-20 h-20 rounded-3xl flex items-center justify-center transition-all ${
+            className={`w-24 h-24 rounded-none flex items-center justify-center transition-all border ${
               isActive 
-                ? 'bg-white/10 text-white ring-1 ring-white/20' 
-                : 'bg-accent text-white shadow-2xl shadow-accent/40 hover:scale-110 active:scale-95'
+                ? 'bg-white/5 text-white border-white/20' 
+                : 'bg-white text-black border-white shadow-2xl shadow-white/10 hover:scale-105 active:scale-95'
             }`}
           >
             {isActive ? <Pause className="w-10 h-10" /> : <Play className="w-10 h-10 ml-1" />}
           </button>
           <button
             onClick={resetTimer}
-            className="w-20 h-20 rounded-3xl bg-white/5 text-white/20 flex items-center justify-center hover:bg-white/10 hover:text-white transition-all ring-1 ring-white/5 hover:ring-white/20"
+            className="w-24 h-24 rounded-none bg-white/2 text-white/20 flex items-center justify-center hover:bg-white/5 hover:text-white transition-all border border-white/5 hover:border-white/20"
           >
             <RotateCcw className="w-8 h-8" />
           </button>
@@ -117,26 +133,29 @@ export default function FocusTimer() {
       </div>
 
       <div className="grid grid-cols-3 gap-8 mt-16 w-full">
-        <div className="glass-panel p-8 text-center group hover:border-accent/30 transition-all">
-          <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-            <Brain className="w-6 h-6 text-accent" />
+        <div className="glass-panel p-8 text-center group hover:border-white/30 transition-all rounded-none relative">
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/10" />
+          <div className="w-12 h-12 rounded-none bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+            <Brain className="w-5 h-5 text-white/60" />
           </div>
-          <h4 className="text-sm font-bold tracking-widest uppercase text-white/60">Focus</h4>
-          <p className="text-xs text-white/30 mt-2 font-medium">25 min deep work</p>
+          <h4 className="text-[10px] font-mono font-bold tracking-widest uppercase text-white/60">Phase_Focus</h4>
+          <p className="text-[8px] font-mono text-white/20 mt-3 uppercase tracking-widest">25m Deep_Work</p>
         </div>
-        <div className="glass-panel p-8 text-center group hover:border-emerald-500/30 transition-all">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-            <Coffee className="w-6 h-6 text-emerald-500" />
+        <div className="glass-panel p-8 text-center group hover:border-white/30 transition-all rounded-none relative">
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/10" />
+          <div className="w-12 h-12 rounded-none bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+            <Coffee className="w-5 h-5 text-white/60" />
           </div>
-          <h4 className="text-sm font-bold tracking-widest uppercase text-white/60">Break</h4>
-          <p className="text-xs text-white/30 mt-2 font-medium">5 min recharge</p>
+          <h4 className="text-[10px] font-mono font-bold tracking-widest uppercase text-white/60">Phase_Break</h4>
+          <p className="text-[8px] font-mono text-white/20 mt-3 uppercase tracking-widest">05m Recharge</p>
         </div>
-        <div className="glass-panel p-8 text-center group hover:border-blue-500/30 transition-all">
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-            <TimerIcon className="w-6 h-6 text-blue-500" />
+        <div className="glass-panel p-8 text-center group hover:border-white/30 transition-all rounded-none relative">
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/10" />
+          <div className="w-12 h-12 rounded-none bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+            <TimerIcon className="w-5 h-5 text-white/60" />
           </div>
-          <h4 className="text-sm font-bold tracking-widest uppercase text-white/60">Rest</h4>
-          <p className="text-xs text-white/30 mt-2 font-medium">15 min rest</p>
+          <h4 className="text-[10px] font-mono font-bold tracking-widest uppercase text-white/60">Phase_Rest</h4>
+          <p className="text-[8px] font-mono text-white/20 mt-3 uppercase tracking-widest">15m System_Rest</p>
         </div>
       </div>
     </div>

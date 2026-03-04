@@ -91,59 +91,66 @@ export default function AIAssistant() {
   };
 
   return (
-    <div className="h-full flex flex-col max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="h-full flex flex-col max-w-5xl mx-auto">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-white/10 pb-8 mb-8">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <Sparkles className="w-8 h-8 text-accent" />
-            AI Assistant
-          </h2>
-          <p className="text-white/40 mt-1">Your personal productivity co-pilot</p>
+          <div className="flex items-center gap-2 mb-2 opacity-60">
+            <div className="w-8 h-px bg-white"></div>
+            <span className="text-white text-[10px] font-mono tracking-wider">004</span>
+            <div className="flex-1 h-px bg-white"></div>
+          </div>
+          <h1 className="text-4xl font-bold tracking-widest uppercase italic transform -skew-x-12">Neural Interface</h1>
+          <p className="text-white/40 mt-4 text-sm font-mono uppercase tracking-widest">Your personal productivity co-pilot</p>
         </div>
         <button 
           onClick={clearChat}
-          className="p-2.5 rounded-xl bg-white/5 text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all"
+          className="p-3 rounded-none bg-white/5 text-white/20 hover:text-white hover:bg-white/10 transition-all border border-white/10"
           title="Clear Chat"
         >
-          <Trash2 className="w-5 h-5" />
+          <Trash2 className="w-4 h-4" />
         </button>
-      </div>
+      </header>
 
-      <div className="flex-1 glass-panel overflow-hidden flex flex-col mb-4 border border-white/5">
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+      <div className="flex-1 glass-panel overflow-hidden flex flex-col mb-4 border border-white/10 rounded-none relative">
+        <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/20" />
+        
+        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
           {messages.map((msg, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+              initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className={`flex gap-6 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
             >
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border border-white/5 ${
-                msg.role === 'assistant' ? 'bg-accent/20 text-accent' : 'bg-white/10 text-white/60'
+              <div className={`w-10 h-10 rounded-none flex items-center justify-center shrink-0 border border-white/10 ${
+                msg.role === 'assistant' ? 'bg-white/5 text-white' : 'bg-white/10 text-white/60'
               }`}>
-                {msg.role === 'assistant' ? <Bot className="w-6 h-6" /> : <User className="w-6 h-6" />}
+                {msg.role === 'assistant' ? <Bot className="w-5 h-5" /> : <User className="w-5 h-5" />}
               </div>
-              <div className={`max-w-[85%] p-5 rounded-[2rem] ${
+              <div className={`max-w-[85%] p-6 rounded-none relative ${
                 msg.role === 'assistant' 
-                  ? 'bg-white/5 text-white/90 rounded-tl-none border border-white/5' 
-                  : 'bg-accent text-white rounded-tr-none shadow-lg shadow-accent/10'
+                  ? 'bg-white/5 text-white/90 border border-white/5' 
+                  : 'bg-white text-black shadow-xl shadow-white/5'
               }`}>
-                <div className="markdown-body text-sm leading-relaxed">
+                <div className={`absolute top-0 ${msg.role === 'user' ? 'right-0' : 'left-0'} w-2 h-2 bg-white/20`} />
+                
+                <div className="markdown-body text-[10px] font-mono uppercase tracking-widest leading-relaxed">
                   <Markdown>{msg.content}</Markdown>
                 </div>
               </div>
             </motion.div>
           ))}
           {isLoading && (
-            <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-2xl bg-accent/20 text-accent flex items-center justify-center border border-accent/10">
-                <Loader2 className="w-6 h-6 animate-spin" />
+            <div className="flex gap-6">
+              <div className="w-10 h-10 rounded-none bg-white/5 text-white flex items-center justify-center border border-white/10">
+                <Loader2 className="w-5 h-5 animate-spin" />
               </div>
-              <div className="bg-white/5 p-5 rounded-[2rem] rounded-tl-none border border-white/5">
-                <div className="flex gap-1.5">
-                  <span className="w-2 h-2 bg-accent/40 rounded-full animate-bounce" />
-                  <span className="w-2 h-2 bg-accent/40 rounded-full animate-bounce [animation-delay:0.2s]" />
-                  <span className="w-2 h-2 bg-accent/40 rounded-full animate-bounce [animation-delay:0.4s]" />
+              <div className="bg-white/5 p-6 rounded-none border border-white/5">
+                <div className="flex gap-2">
+                  <span className="w-1.5 h-1.5 bg-white/40 rounded-none animate-pulse" />
+                  <span className="w-1.5 h-1.5 bg-white/40 rounded-none animate-pulse [animation-delay:0.2s]" />
+                  <span className="w-1.5 h-1.5 bg-white/40 rounded-none animate-pulse [animation-delay:0.4s]" />
                 </div>
               </div>
             </div>
@@ -151,27 +158,28 @@ export default function AIAssistant() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-6 border-t border-white/5 bg-white/[0.02]">
+        <div className="p-8 border-t border-white/10 bg-white/[0.02]">
           <div className="relative">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask about file organization, naming rules..."
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-6 pr-14 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-medium"
+              placeholder="COMMAND_INPUT_STREAM..."
+              className="w-full bg-white/5 border border-white/10 rounded-none py-5 pl-6 pr-16 focus:outline-none focus:ring-1 focus:ring-white/50 transition-all font-mono text-[10px] uppercase tracking-widest font-bold"
             />
             <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-accent text-white rounded-xl hover:bg-accent-hover transition-all disabled:opacity-50 disabled:grayscale shadow-lg shadow-accent/20"
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white text-black rounded-none hover:bg-white/90 transition-all disabled:opacity-50 disabled:grayscale shadow-xl shadow-white/5"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4" />
             </button>
           </div>
-          <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-widest justify-center">
-            <Info className="w-3 h-3" />
-            <span>Powered by Gemini 3 Flash</span>
+          <div className="mt-6 flex items-center gap-3 text-[8px] font-mono font-bold text-white/20 uppercase tracking-[0.3em] justify-center">
+            <div className="w-4 h-px bg-white/10" />
+            <span>Core: Gemini 3 Flash / Protocol: v1.0.4</span>
+            <div className="w-4 h-px bg-white/10" />
           </div>
         </div>
       </div>

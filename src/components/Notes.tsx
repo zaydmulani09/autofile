@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Trash2, Save, StickyNote } from 'lucide-react';
+import { Plus, Trash2, Save, StickyNote, RefreshCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Note {
@@ -60,53 +60,82 @@ export default function Notes() {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between">
+    <div className="space-y-10 max-w-5xl mx-auto">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-white/10 pb-8">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <StickyNote className="w-8 h-8 text-accent" />
-            My Notes
-          </h2>
-          <p className="text-white/40 mt-1">Quick thoughts and reminders stored in Supabase</p>
+          <div className="flex items-center gap-2 mb-2 opacity-60">
+            <div className="w-8 h-px bg-white"></div>
+            <span className="text-white text-[10px] font-mono tracking-wider">003</span>
+            <div className="flex-1 h-px bg-white"></div>
+          </div>
+          <h1 className="text-4xl font-bold tracking-widest uppercase italic transform -skew-x-12">Data Logs</h1>
+          <p className="text-white/40 mt-4 text-sm font-mono uppercase tracking-widest">Quick thoughts and reminders stored in Supabase</p>
         </div>
-      </div>
+      </header>
 
-      <form onSubmit={handleAddNote} className="glass-panel p-6 space-y-4">
-        <input
-          type="text"
-          placeholder="Note Title"
-          value={newNote.title}
-          onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50"
-        />
-        <textarea
-          placeholder="Note Content..."
-          value={newNote.content}
-          onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 h-32 focus:outline-none focus:ring-2 focus:ring-accent/50"
-        />
+      <form onSubmit={handleAddNote} className="glass-panel p-8 space-y-6 rounded-none relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/20" />
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] font-mono">Entry Title</label>
+            <input
+              type="text"
+              placeholder="IDENTIFIER_01"
+              value={newNote.title}
+              onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+              className="w-full bg-white/5 border border-white/10 rounded-none px-5 py-4 text-[10px] font-mono uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-white/50 transition-all font-bold"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] font-mono">Content Body</label>
+            <textarea
+              placeholder="INPUT_DATA_STREAM..."
+              value={newNote.content}
+              onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+              className="w-full bg-white/5 border border-white/10 rounded-none px-5 py-4 h-32 text-[10px] font-mono uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-white/50 transition-all font-bold resize-none"
+            />
+          </div>
+        </div>
+        
         <button
           type="submit"
           disabled={isLoading || !newNote.title.trim()}
-          className="flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent-hover text-white rounded-xl font-bold transition-all disabled:opacity-50"
+          className="flex items-center gap-3 px-8 py-4 bg-white text-black hover:bg-white/90 rounded-none font-bold text-[10px] tracking-widest uppercase transition-all disabled:opacity-50 font-mono"
         >
-          {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus className="w-5 h-5" />}
-          Add Note
+          {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          Commit Entry
         </button>
       </form>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {notes.map((note) => (
           <motion.div
             key={note.id}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-panel p-6 space-y-3 relative group"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-panel p-8 space-y-4 relative group rounded-none border border-white/10 hover:border-white/30 transition-all"
           >
-            <h3 className="font-bold text-lg">{note.title}</h3>
-            <p className="text-white/60 text-sm whitespace-pre-wrap">{note.content}</p>
-            <div className="text-[10px] text-white/20 uppercase tracking-widest pt-4">
-              {new Date(note.created_at).toLocaleDateString()}
+            <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/10 group-hover:border-white/40 transition-colors" />
+            
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm uppercase tracking-widest font-mono">{note.title}</h3>
+              <div className="w-2 h-2 bg-white/20 group-hover:bg-white transition-colors" />
+            </div>
+            
+            <p className="text-white/60 text-[10px] font-mono uppercase tracking-widest whitespace-pre-wrap leading-relaxed">{note.content}</p>
+            
+            <div className="flex items-center justify-between pt-6 border-t border-white/5">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-1 bg-white/40" />
+                <span className="text-[8px] font-mono text-white/20 uppercase tracking-[0.3em]">
+                  {new Date(note.created_at).toLocaleDateString()}
+                </span>
+              </div>
+              <button className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <Trash2 className="w-3 h-3 text-white/20 hover:text-white transition-colors" />
+              </button>
             </div>
           </motion.div>
         ))}

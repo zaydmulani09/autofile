@@ -94,58 +94,62 @@ export default function Settings({ setFiles, setRules }: SettingsProps) {
     switch (activeSubView) {
       case 'profile':
         return (
-          <div className="glass-panel p-6 space-y-6">
+          <div className="glass-panel p-8 space-y-8 rounded-none relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg">Profile Information</h3>
-              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+              <h3 className="font-bold text-lg uppercase tracking-widest font-mono">Profile Information</h3>
+              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white border border-transparent hover:border-white/10 p-2"><X className="w-4 h-4" /></button>
             </div>
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-white/40 uppercase tracking-wider">Full Name</label>
+            <form onSubmit={handleUpdateProfile} className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] font-mono">Full Name</label>
                 <input 
                   type="text" 
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
-                  placeholder="Your Name"
+                  className="w-full bg-white/5 border border-white/10 rounded-none px-5 py-4 text-[10px] font-mono uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-white/50 transition-all font-bold"
+                  placeholder="USER_NAME"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-white/40 uppercase tracking-wider">Email Address</label>
-                <input type="email" disabled value={user?.email || 'guest@example.com'} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm opacity-50" />
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] font-mono">Email Address</label>
+                <input type="email" disabled value={user?.email || 'GUEST@EXAMPLE.COM'} className="w-full bg-white/5 border border-white/10 rounded-none px-5 py-4 text-[10px] font-mono uppercase tracking-widest opacity-50 font-bold" />
               </div>
-              <button type="submit" disabled={isSaving} className="w-full py-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold flex items-center justify-center gap-2">
-                {isSaving ? 'Saving...' : <><Check className="w-4 h-4" /> Save Changes</>}
+              <button type="submit" disabled={isSaving} className="w-full py-4 rounded-none bg-white text-black font-bold text-[10px] uppercase tracking-widest hover:bg-white/90 transition-all shadow-xl shadow-white/5 font-mono flex items-center justify-center gap-2">
+                {isSaving ? 'SAVING...' : <><Check className="w-4 h-4" /> Save Changes</>}
               </button>
             </form>
           </div>
         );
       case 'security':
         return (
-          <div className="glass-panel p-6 space-y-6">
+          <div className="glass-panel p-8 space-y-8 rounded-none relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg">Security & Privacy</h3>
-              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+              <h3 className="font-bold text-lg uppercase tracking-widest font-mono">Security & Privacy</h3>
+              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white border border-transparent hover:border-white/10 p-2"><X className="w-4 h-4" /></button>
             </div>
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Lock className="w-5 h-5 text-white/40" />
+              <div className="p-5 rounded-none bg-white/5 border border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-none bg-white/5 border border-white/10 flex items-center justify-center">
+                    <Lock className="w-4 h-4 text-white/40" />
+                  </div>
                   <div>
-                    <p className="text-sm font-bold">Two-Factor Authentication</p>
-                    <p className="text-xs text-white/40">Add an extra layer of security.</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest font-mono">Two-Factor Auth</p>
+                    <p className="text-[8px] text-white/30 uppercase tracking-widest font-mono mt-1">Extra security layer.</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => triggerSuccess('2FA setup initiated!')}
-                  className="text-xs font-bold text-accent hover:underline"
+                  className="text-[10px] font-bold text-white hover:underline uppercase tracking-widest font-mono"
                 >
                   Enable
                 </button>
               </div>
               <button 
                 onClick={() => triggerSuccess('Password reset email sent!')}
-                className="w-full py-3 rounded-xl border border-white/10 hover:bg-white/5 text-sm font-bold transition-all"
+                className="w-full py-4 rounded-none border border-white/10 hover:bg-white/5 text-[10px] font-bold uppercase tracking-widest font-mono transition-all"
               >
                 Change Password
               </button>
@@ -154,23 +158,24 @@ export default function Settings({ setFiles, setRules }: SettingsProps) {
         );
       case 'notifications':
         return (
-          <div className="glass-panel p-6 space-y-6">
+          <div className="glass-panel p-8 space-y-8 rounded-none relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg">Notifications</h3>
-              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+              <h3 className="font-bold text-lg uppercase tracking-widest font-mono">Notifications</h3>
+              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white border border-transparent hover:border-white/10 p-2"><X className="w-4 h-4" /></button>
             </div>
             <div className="space-y-4">
               {Object.entries(notifications).map(([key, val]) => (
-                <div key={key} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
-                  <span className="text-sm font-bold capitalize">{key} Notifications</span>
+                <div key={key} className="flex items-center justify-between p-5 rounded-none bg-white/5 border border-white/10">
+                  <span className="text-[10px] font-bold uppercase tracking-widest font-mono">{key} Notifications</span>
                   <button 
                     onClick={() => {
                       setNotifications(prev => ({ ...prev, [key]: !val }));
                       triggerSuccess(`${key.charAt(0).toUpperCase() + key.slice(1)} notifications ${!val ? 'enabled' : 'disabled'}`);
                     }}
-                    className={cn("w-10 h-5 rounded-full relative transition-colors", val ? "bg-accent" : "bg-white/10")}
+                    className={cn("w-10 h-5 rounded-none relative transition-colors", val ? "bg-white" : "bg-white/10")}
                   >
-                    <motion.div animate={{ x: val ? 22 : 2 }} className="absolute top-1 w-3 h-3 bg-white rounded-full" />
+                    <motion.div animate={{ x: val ? 22 : 2 }} className={cn("absolute top-1 w-3 h-3 rounded-none", val ? "bg-black" : "bg-white")} />
                   </button>
                 </div>
               ))}
@@ -179,19 +184,20 @@ export default function Settings({ setFiles, setRules }: SettingsProps) {
         );
       case 'language':
         return (
-          <div className="glass-panel p-6 space-y-6">
+          <div className="glass-panel p-8 space-y-8 rounded-none relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg">Language & Region</h3>
-              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+              <h3 className="font-bold text-lg uppercase tracking-widest font-mono">Language & Region</h3>
+              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white border border-transparent hover:border-white/10 p-2"><X className="w-4 h-4" /></button>
             </div>
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-1 gap-3">
               {['English', 'Spanish', 'French', 'German', 'Japanese'].map(lang => (
                 <button 
                   key={lang}
                   onClick={() => { setLanguage(lang); triggerSuccess(`Language changed to ${lang}`); }}
-                  className={cn("p-4 rounded-xl border flex items-center justify-between transition-all", language === lang ? "bg-accent/10 border-accent text-accent" : "bg-white/5 border-white/10 text-white/60 hover:text-white")}
+                  className={cn("p-5 rounded-none border flex items-center justify-between transition-all font-mono uppercase tracking-widest", language === lang ? "bg-white border-white text-black" : "bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20")}
                 >
-                  <span className="text-sm font-bold">{lang}</span>
+                  <span className="text-[10px] font-bold">{lang}</span>
                   {language === lang && <Check className="w-4 h-4" />}
                 </button>
               ))}
@@ -200,70 +206,75 @@ export default function Settings({ setFiles, setRules }: SettingsProps) {
         );
       case 'appearance':
         return (
-          <div className="glass-panel p-6 space-y-6">
+          <div className="glass-panel p-8 space-y-8 rounded-none relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg">Appearance</h3>
-              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+              <h3 className="font-bold text-lg uppercase tracking-widest font-mono">Appearance</h3>
+              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white border border-transparent hover:border-white/10 p-2"><X className="w-4 h-4" /></button>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <button 
                 onClick={() => { setTheme('dark'); triggerSuccess('Dark theme applied'); }}
-                className={cn("p-6 rounded-2xl border flex flex-col items-center gap-3 transition-all", theme === 'dark' ? "bg-accent/10 border-accent text-accent" : "bg-white/5 border-white/10 text-white/40")}
+                className={cn("p-8 rounded-none border flex flex-col items-center gap-4 transition-all font-mono uppercase tracking-widest", theme === 'dark' ? "bg-white border-white text-black" : "bg-white/5 border-white/10 text-white/40")}
               >
-                <Moon className="w-8 h-8" />
-                <span className="text-sm font-bold">Dark Mode</span>
+                <Moon className="w-6 h-6" />
+                <span className="text-[10px] font-bold">Dark Mode</span>
               </button>
               <button 
                 onClick={() => { setTheme('light'); triggerSuccess('Light theme applied'); }}
-                className={cn("p-6 rounded-2xl border flex flex-col items-center gap-3 transition-all", theme === 'light' ? "bg-accent/10 border-accent text-accent" : "bg-white/5 border-white/10 text-white/40")}
+                className={cn("p-8 rounded-none border flex flex-col items-center gap-4 transition-all font-mono uppercase tracking-widest", theme === 'light' ? "bg-white border-white text-black" : "bg-white/5 border-white/10 text-white/40")}
               >
-                <Sun className="w-8 h-8" />
-                <span className="text-sm font-bold">Light Mode</span>
+                <Sun className="w-6 h-6" />
+                <span className="text-[10px] font-bold">Light Mode</span>
               </button>
             </div>
           </div>
         );
       case 'storage':
         return (
-          <div className="glass-panel p-6 space-y-6">
+          <div className="glass-panel p-8 space-y-8 rounded-none relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg">Storage Management</h3>
-              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+              <h3 className="font-bold text-lg uppercase tracking-widest font-mono">Storage Management</h3>
+              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white border border-transparent hover:border-white/10 p-2"><X className="w-4 h-4" /></button>
             </div>
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-white/40 uppercase">Local Cache</span>
-                  <span className="text-xs font-bold">12.4 MB</span>
+            <div className="space-y-6">
+              <div className="p-5 rounded-none bg-white/5 border border-white/10">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest font-mono">Local Cache</span>
+                  <span className="text-[10px] font-bold font-mono">12.4 MB</span>
                 </div>
-                <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                  <div className="w-1/4 h-full bg-accent" />
+                <div className="w-full h-1 bg-white/5 rounded-none overflow-hidden">
+                  <div className="w-1/4 h-full bg-white" />
                 </div>
               </div>
               <button 
                 onClick={handleClearCache}
                 disabled={isSaving}
-                className="w-full py-3 rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500 text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                className="w-full py-4 rounded-none border border-white/10 bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition-all"
               >
-                <Trash2 className="w-4 h-4" /> {isSaving ? 'Clearing...' : 'Clear Application Cache'}
+                <Trash2 className="w-3 h-3" /> {isSaving ? 'CLEARING...' : 'Clear Application Cache'}
               </button>
             </div>
           </div>
         );
       case 'performance':
         return (
-          <div className="glass-panel p-6 space-y-6">
+          <div className="glass-panel p-8 space-y-8 rounded-none relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg">Performance</h3>
-              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+              <h3 className="font-bold text-lg uppercase tracking-widest font-mono">Performance</h3>
+              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white border border-transparent hover:border-white/10 p-2"><X className="w-4 h-4" /></button>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
-                <div className="flex items-center gap-3">
-                  <Zap className="w-5 h-5 text-amber-400" />
+              <div className="flex items-center justify-between p-5 rounded-none bg-white/5 border border-white/10">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-none bg-white/5 border border-white/10 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-white/40" />
+                  </div>
                   <div>
-                    <p className="text-sm font-bold">Hardware Acceleration</p>
-                    <p className="text-xs text-white/40">Use GPU for smoother animations.</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest font-mono">Hardware Acceleration</p>
+                    <p className="text-[8px] text-white/30 uppercase tracking-widest font-mono mt-1">GPU optimization.</p>
                   </div>
                 </div>
                 <button 
@@ -271,9 +282,9 @@ export default function Settings({ setFiles, setRules }: SettingsProps) {
                     setPerformanceMode(!performanceMode);
                     triggerSuccess(`Hardware acceleration ${!performanceMode ? 'enabled' : 'disabled'}`);
                   }}
-                  className={cn("w-10 h-5 rounded-full relative transition-colors", performanceMode ? "bg-accent" : "bg-white/10")}
+                  className={cn("w-10 h-5 rounded-none relative transition-colors", performanceMode ? "bg-white" : "bg-white/10")}
                 >
-                  <motion.div animate={{ x: performanceMode ? 22 : 2 }} className="absolute top-1 w-3 h-3 bg-white rounded-full" />
+                  <motion.div animate={{ x: performanceMode ? 22 : 2 }} className={cn("absolute top-1 w-3 h-3 rounded-none", performanceMode ? "bg-black" : "bg-white")} />
                 </button>
               </div>
             </div>
@@ -281,24 +292,25 @@ export default function Settings({ setFiles, setRules }: SettingsProps) {
         );
       case 'danger':
         return (
-          <div className="glass-panel p-6 space-y-6 border-red-500/20">
+          <div className="glass-panel p-8 space-y-8 rounded-none relative overflow-hidden border-white/20">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/40" />
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="w-5 h-5 text-red-500" />
-                <h3 className="font-bold text-lg text-red-500">Danger Zone</h3>
+              <div className="flex items-center gap-4">
+                <AlertTriangle className="w-5 h-5 text-white" />
+                <h3 className="font-bold text-lg uppercase tracking-widest font-mono">Danger Zone</h3>
               </div>
-              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+              <button onClick={() => setActiveSubView('none')} className="text-white/40 hover:text-white border border-transparent hover:border-white/10 p-2"><X className="w-4 h-4" /></button>
             </div>
-            <div className="p-5 rounded-2xl bg-red-500/5 border border-red-500/10 space-y-4">
-              <p className="text-sm text-red-200/60 leading-relaxed">
-                Resetting the application will permanently delete all your uploaded files, custom rules, and settings. This action cannot be undone.
+            <div className="p-6 rounded-none bg-white/5 border border-white/10 space-y-6">
+              <p className="text-[10px] text-white/40 leading-relaxed font-bold uppercase tracking-widest font-mono">
+                Resetting the application will permanently delete all uploaded files, custom rules, and settings. / Action irreversible.
               </p>
               <button 
                 onClick={handleResetApp}
                 disabled={isSaving}
-                className="w-full py-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-500/20"
+                className="w-full py-5 rounded-none bg-white text-black font-bold uppercase tracking-widest font-mono flex items-center justify-center gap-3 transition-all shadow-xl shadow-white/5"
               >
-                {isSaving ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                {isSaving ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 Reset All Data
               </button>
             </div>
@@ -336,10 +348,15 @@ export default function Settings({ setFiles, setRules }: SettingsProps) {
   ];
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-white/40 mt-1">Manage your application preferences and account settings.</p>
+    <div className="space-y-10 max-w-4xl mx-auto">
+      <header className="border-b border-white/10 pb-8">
+        <div className="flex items-center gap-2 mb-2 opacity-60">
+          <div className="w-8 h-px bg-white"></div>
+          <span className="text-white text-[10px] font-mono tracking-wider">007</span>
+          <div className="flex-1 h-px bg-white"></div>
+        </div>
+        <h1 className="text-4xl font-bold tracking-widest uppercase italic transform -skew-x-12">System Config</h1>
+        <p className="text-white/40 mt-4 text-sm font-mono uppercase tracking-widest">Manage your application preferences and account settings.</p>
       </header>
 
       <div className="space-y-8">
@@ -363,24 +380,25 @@ export default function Settings({ setFiles, setRules }: SettingsProps) {
             >
               {sections.map((section) => (
                 <div key={section.title} className="space-y-4">
-                  <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider px-2">{section.title}</h3>
-                  <div className="glass-panel overflow-hidden divide-y divide-white/5">
+                  <h3 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] px-2 font-mono">{section.title}</h3>
+                  <div className="glass-panel overflow-hidden divide-y divide-white/5 rounded-none relative">
+                    <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/20" />
                     {section.items.map((item) => (
                       <button 
                         key={item.label}
                         onClick={item.action}
-                        className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-all group text-left"
+                        className="w-full p-5 flex items-center justify-between hover:bg-white/5 transition-all group text-left"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className={cn("w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-accent/10 group-hover:text-accent transition-all", item.color)}>
-                            <item.icon className="w-5 h-5" />
+                        <div className="flex items-center gap-5">
+                          <div className={cn("w-10 h-10 rounded-none bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 group-hover:text-white transition-all", item.color)}>
+                            <item.icon className="w-4 h-4" />
                           </div>
                           <div>
-                            <p className={cn("text-sm font-bold", item.color)}>{item.label}</p>
-                            <p className="text-xs text-white/40 mt-0.5">{item.desc}</p>
+                            <p className={cn("text-[10px] font-bold uppercase tracking-widest font-mono", item.color)}>{item.label}</p>
+                            <p className="text-[8px] text-white/30 mt-1 uppercase tracking-widest font-mono">{item.desc}</p>
                           </div>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/60 transition-all" />
+                        <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-white/60 transition-all" />
                       </button>
                     ))}
                   </div>
@@ -391,16 +409,16 @@ export default function Settings({ setFiles, setRules }: SettingsProps) {
                 {user ? (
                   <button 
                     onClick={logout}
-                    className="w-full p-4 rounded-2xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500 transition-all flex items-center justify-center gap-2 font-bold"
+                    className="w-full p-5 rounded-none border border-white/10 bg-white/5 hover:bg-white/10 text-white transition-all flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-[10px] font-mono"
                   >
-                    <LogOut className="w-5 h-5" /> Sign Out
+                    <LogOut className="w-4 h-4" /> Sign Out
                   </button>
                 ) : (
                   <button 
                     onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal'))}
-                    className="w-full p-4 rounded-2xl bg-accent hover:bg-accent-hover text-white transition-all flex items-center justify-center gap-2 font-bold shadow-lg shadow-accent/20"
+                    className="w-full p-5 rounded-none bg-white text-black transition-all flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-[10px] font-mono shadow-xl shadow-white/5"
                   >
-                    <User className="w-5 h-5" /> Sign In to Sync Data
+                    <User className="w-4 h-4" /> Sign In to Sync Data
                   </button>
                 )}
               </div>
@@ -421,10 +439,10 @@ export default function Settings({ setFiles, setRules }: SettingsProps) {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3"
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-white text-black px-8 py-4 rounded-none shadow-2xl flex items-center gap-4 border border-white/20"
           >
-            <Check className="w-5 h-5" />
-            <span className="font-bold">{successMessage}</span>
+            <Check className="w-4 h-4" />
+            <span className="font-bold uppercase tracking-widest text-[10px] font-mono">{successMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>

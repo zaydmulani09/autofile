@@ -103,55 +103,61 @@ export default function SmartNotes() {
     <div className="h-full flex gap-8">
       {/* Sidebar */}
       <div className="w-80 flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">Notes</h2>
+        <div className="flex items-center justify-between border-b border-white/10 pb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1 opacity-60">
+              <div className="w-4 h-px bg-white"></div>
+              <span className="text-white text-[8px] font-mono tracking-wider">010</span>
+            </div>
+            <h2 className="text-2xl font-bold tracking-widest uppercase italic transform -skew-x-12 font-mono">Archive</h2>
+          </div>
           <button 
             onClick={createNote}
             disabled={isSaving}
-            className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white shadow-lg shadow-accent/20 hover:scale-105 transition-all disabled:opacity-50"
+            className="w-10 h-10 rounded-none bg-white flex items-center justify-center text-black shadow-lg shadow-white/5 hover:scale-105 transition-all disabled:opacity-50 border border-white/10"
           >
-            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           </button>
         </div>
 
         <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-accent transition-colors" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 text-white/20 group-focus-within:text-white transition-colors" />
           <input 
             type="text"
-            placeholder="Search notes..."
+            placeholder="SEARCH_ARCHIVE..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 focus:outline-none focus:border-accent/50 transition-all text-sm font-medium"
+            className="w-full bg-white/5 border border-white/10 rounded-none py-3 pl-12 pr-4 focus:outline-none focus:ring-1 focus:ring-white/50 transition-all text-[10px] font-mono uppercase tracking-widest font-bold"
           />
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
           {isLoading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 text-accent animate-spin" />
+              <Loader2 className="w-6 h-6 text-white/20 animate-spin" />
             </div>
           ) : filteredNotes.map(note => (
             <button
               key={note.id}
               onClick={() => setActiveNoteId(note.id)}
-              className={`w-full text-left p-5 rounded-2xl transition-all group relative overflow-hidden ${
+              className={`w-full text-left p-5 rounded-none transition-all group relative overflow-hidden border ${
                 activeNoteId === note.id 
-                  ? 'bg-accent/10 border border-accent/20' 
-                  : 'bg-white/5 border border-transparent hover:bg-white/10 hover:border-white/10'
+                  ? 'bg-white/10 border-white/20' 
+                  : 'bg-white/2 border-transparent hover:bg-white/5 hover:border-white/10'
               }`}
             >
               {activeNoteId === note.id && (
                 <motion.div 
                   layoutId="active-note-indicator"
-                  className="absolute left-0 top-0 bottom-0 w-1 bg-accent"
+                  className="absolute left-0 top-0 bottom-0 w-1 bg-white"
                 />
               )}
-              <h3 className={`font-bold tracking-wide truncate ${activeNoteId === note.id ? 'text-accent' : 'text-white/80'}`}>
-                {note.title || 'Untitled'}
+              <h3 className={`font-bold text-[10px] uppercase tracking-widest font-mono truncate ${activeNoteId === note.id ? 'text-white' : 'text-white/40'}`}>
+                {note.title || 'UNTITLED_ENTRY'}
               </h3>
-              <p className="text-xs text-white/30 mt-2 truncate font-medium">{note.content || 'No content yet...'}</p>
-              <div className="flex items-center gap-2 mt-3 text-[10px] font-bold text-white/20 uppercase tracking-widest">
-                <Clock className="w-3 h-3" />
+              <p className="text-[8px] text-white/20 mt-2 truncate font-mono uppercase tracking-widest">{note.content || 'NULL_CONTENT'}</p>
+              <div className="flex items-center gap-2 mt-4 text-[8px] font-bold text-white/10 uppercase tracking-[0.2em] font-mono">
+                <Clock className="w-2.5 h-2.5" />
                 {new Date(note.created_at).toLocaleDateString()}
               </div>
             </button>
@@ -160,7 +166,10 @@ export default function SmartNotes() {
       </div>
 
       {/* Editor */}
-      <div className="flex-1 glass-panel flex flex-col overflow-hidden relative">
+      <div className="flex-1 glass-panel flex flex-col overflow-hidden relative rounded-none border-white/10">
+        <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20" />
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/20" />
+        
         {activeNote ? (
           <>
             <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/2">
@@ -168,32 +177,35 @@ export default function SmartNotes() {
                 type="text"
                 value={activeNote.title}
                 onChange={(e) => updateNote(activeNote.id, { title: e.target.value })}
-                className="bg-transparent text-2xl font-bold focus:outline-none w-full tracking-tight placeholder:text-white/10"
-                placeholder="Note Title"
+                className="bg-transparent text-xl font-bold focus:outline-none w-full tracking-widest uppercase italic transform -skew-x-6 font-mono placeholder:text-white/10"
+                placeholder="ENTRY_TITLE"
               />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
+                <div className="text-[8px] font-mono text-white/20 uppercase tracking-widest hidden sm:block">
+                  ID: {activeNote.id.slice(0, 8)}
+                </div>
                 <button 
                   onClick={() => deleteNote(activeNote.id)}
-                  className="p-3 rounded-xl text-white/10 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                  className="p-3 rounded-none text-white/10 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 transition-all"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
             <textarea 
               value={activeNote.content}
               onChange={(e) => updateNote(activeNote.id, { content: e.target.value })}
-              className="flex-1 bg-transparent p-8 focus:outline-none resize-none text-white/70 leading-relaxed font-sans text-lg placeholder:text-white/5"
-              placeholder="Start writing your thoughts..."
+              className="flex-1 bg-transparent p-10 focus:outline-none resize-none text-white/60 leading-relaxed font-mono text-sm uppercase tracking-widest placeholder:text-white/5"
+              placeholder="INITIALIZING_INPUT_STREAM..."
             />
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-white/10">
-            <div className="w-24 h-24 rounded-3xl bg-white/5 flex items-center justify-center mb-6">
-              <FileText className="w-12 h-12" />
+            <div className="w-20 h-20 rounded-none bg-white/5 border border-white/10 flex items-center justify-center mb-8">
+              <FileText className="w-10 h-10" />
             </div>
-            <p className="text-lg font-bold tracking-tight">Select a note to view or edit</p>
-            <p className="text-sm mt-2 font-medium opacity-50">Choose from the list or create a new one</p>
+            <p className="text-sm font-bold tracking-widest uppercase font-mono italic">Select entry for decryption</p>
+            <p className="text-[10px] mt-4 font-mono uppercase tracking-widest opacity-30">Choose from the archive or initialize new entry</p>
           </div>
         )}
       </div>
