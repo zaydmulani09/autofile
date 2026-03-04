@@ -26,9 +26,18 @@ export default function PasswordChecker() {
 
   const result = useMemo(() => {
     try {
-      return zxcvbn(password || '');
+      if (!password) {
+        return {
+          score: 0,
+          guesses_log10: 0,
+          crack_times_display: { offline_slow_hashing_1e4_per_second: 'N/A' },
+          feedback: { warning: '', suggestions: [] }
+        };
+      }
+      const analysis = zxcvbn(password);
+      return analysis;
     } catch (e) {
-      console.error('zxcvbn error:', e);
+      console.error('[PasswordChecker] zxcvbn analysis failed:', e);
       return {
         score: 0,
         guesses_log10: 0,
@@ -157,7 +166,7 @@ export default function PasswordChecker() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">Strength Level</span>
-                <span className={cn("text-[10px] font-mono font-bold uppercase tracking-widest", result.score < 2 ? "text-red-400" : "text-emerald-400")}>
+                <span className={cn("text-[10px] font-mono font-bold uppercase tracking-widest", (result?.score ?? 0) < 2 ? "text-red-400" : "text-emerald-400")}>
                   {strengthLabel}
                 </span>
               </div>
@@ -167,7 +176,7 @@ export default function PasswordChecker() {
                     key={i}
                     className={cn(
                       "h-full flex-1 transition-all duration-500",
-                      i <= result.score && password ? strengthColor : "bg-white/5"
+                      i <= (result?.score ?? 0) && password ? strengthColor : "bg-white/5"
                     )}
                   />
                 ))}
@@ -219,13 +228,13 @@ export default function PasswordChecker() {
                 )}
                 <div>
                   <h4 className="text-[10px] font-bold font-mono uppercase tracking-widest">
-                    {isCheckingPwned ? 'QUERYING_PWNED_DATABASE...' : 
+                    {isCheckingPwned || pwnedCount === null ? 'QUERYING_PWNED_DATABASE...' : 
                      pwnedCount === 0 ? 'CLEAN_DATA_RECORD' : 'DATA_BREACH_DETECTED'}
                   </h4>
                   <p className="text-[8px] font-mono uppercase tracking-widest text-white/40 mt-1">
-                    {isCheckingPwned ? 'Verifying hash suffix via k-anonymity...' :
+                    {isCheckingPwned || pwnedCount === null ? 'Verifying hash suffix via k-anonymity...' :
                      pwnedCount === 0 ? 'This password was not found in any known public data breaches.' :
-                     `Warning: This password has appeared in ${pwnedCount.toLocaleString()} data breaches.`}
+                     `Warning: This password has appeared in ${(pwnedCount || 0).toLocaleString()} data breaches.`}
                   </p>
                 </div>
               </motion.div>
@@ -246,7 +255,7 @@ export default function PasswordChecker() {
                 <div className="flex gap-3">
                   <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
                   <p className="text-[9px] font-mono uppercase tracking-widest text-red-400 leading-relaxed">
-                    {result.feedback.warning}
+                    {result?.feedback?.warning}
                   </p>
                 </div>
               )}
