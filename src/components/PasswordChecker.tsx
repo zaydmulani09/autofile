@@ -24,7 +24,19 @@ export default function PasswordChecker() {
   const [pwnedCount, setPwnedCount] = useState<number | null>(null);
   const [isCheckingPwned, setIsCheckingPwned] = useState(false);
 
-  const result = useMemo(() => zxcvbn(password), [password]);
+  const result = useMemo(() => {
+    try {
+      return zxcvbn(password || '');
+    } catch (e) {
+      console.error('zxcvbn error:', e);
+      return {
+        score: 0,
+        guesses_log10: 0,
+        crack_times_display: { offline_slow_hashing_1e4_per_second: 'N/A' },
+        feedback: { warning: '', suggestions: [] }
+      };
+    }
+  }, [password]);
 
   useEffect(() => {
     if (!password) {
@@ -67,7 +79,7 @@ export default function PasswordChecker() {
     'bg-yellow-500',
     'bg-blue-500',
     'bg-emerald-500'
-  ][result.score];
+  ][result?.score ?? 0] || 'bg-red-500';
 
   const strengthLabel = [
     'CRITICAL_WEAKNESS',
@@ -75,7 +87,7 @@ export default function PasswordChecker() {
     'MODERATE_PROTECTION',
     'HIGH_SECURITY',
     'OPTIMAL_ENCRYPTION'
-  ][result.score];
+  ][result?.score ?? 0] || 'CRITICAL_WEAKNESS';
 
   const generateStrongPassword = () => {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
@@ -170,7 +182,7 @@ export default function PasswordChecker() {
                   <span className="text-[8px] font-mono uppercase tracking-widest text-white/40">Entropy</span>
                 </div>
                 <p className="text-xl font-mono font-bold italic transform -skew-x-12">
-                  {password ? Math.round(result.guesses_log10 * 3.322) : 0} <span className="text-[10px] not-italic opacity-40">BITS</span>
+                  {password ? Math.round((result?.guesses_log10 ?? 0) * 3.322) : 0} <span className="text-[10px] not-italic opacity-40">BITS</span>
                 </p>
               </div>
               <div className="bg-white/5 border border-white/10 p-4">
@@ -179,7 +191,7 @@ export default function PasswordChecker() {
                   <span className="text-[8px] font-mono uppercase tracking-widest text-white/40">Crack Time</span>
                 </div>
                 <p className="text-sm font-mono font-bold uppercase tracking-widest truncate">
-                  {password ? result.crack_times_display.offline_slow_hashing_1e4_per_second : 'N/A'}
+                  {password ? (result?.crack_times_display?.offline_slow_hashing_1e4_per_second || 'N/A') : 'N/A'}
                 </p>
               </div>
             </div>
@@ -230,7 +242,7 @@ export default function PasswordChecker() {
             </h3>
             
             <div className="space-y-4">
-              {result.feedback.warning && (
+              {result?.feedback?.warning && (
                 <div className="flex gap-3">
                   <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
                   <p className="text-[9px] font-mono uppercase tracking-widest text-red-400 leading-relaxed">
@@ -239,7 +251,7 @@ export default function PasswordChecker() {
                 </div>
               )}
               
-              {result.feedback.suggestions.length > 0 ? (
+              {result?.feedback?.suggestions && result.feedback.suggestions.length > 0 ? (
                 result.feedback.suggestions.map((s, i) => (
                   <div key={i} className="flex gap-3">
                     <Shield className="w-4 h-4 text-white/20 shrink-0" />
