@@ -4,9 +4,43 @@ import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
 import { createClient } from '@supabase/supabase-js';
+import multer from 'multer';
+import sharp from 'sharp';
+import ffmpeg from 'fluent-ffmpeg';
+import fs from 'fs';
+import { promisify } from 'util';
+import cron from 'node-cron';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Ensure temp directory exists
+const tempDir = path.join(__dirname, 'temp');
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir);
+}
+
+// Multer configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, tempDir),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
+  fileFilter: (req, file, cb) => {
+    const forbiddenExtensions = ['.exe', '.sh', '.bat', '.cmd', '.msi'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (forbiddenExtensions.includes(ext)) {
+      return cb(new Error('Executable files are not allowed'));
+    }
+    cb(null, true);
+  }
+});
 
 // Supabase configuration
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -241,6 +275,84 @@ async function startServer() {
     
     if (error) return res.status(500).json({ error: error.message });
     res.json(file);
+  });
+
+  // File Conversion Route
+  app.post("/api/convert", upload.single('file'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    const { targetFormat } = req.body;
+    if (!targetFormat) return res.status(400).json({ error: "No target format specified" });
+
+    const inputPath = req.file.path;
+    const outputFilename = `converted-${Date.now()}.${targetFormat}`;
+    const outputPath = path.join(tempDir, outputFilename);
+
+    try {
+      const mimeType = req.file.mimetype;
+      
+      if (mimeType.startsWith('image/')) {
+        await sharp(inputPath).toFormat(targetFormat as any).toFile(outputPath);
+      } else if (mimeType.startsWith('video/')) {
+        await new Promise((resolve, reject) => {
+          ffmpeg(inputPath)
+            .toFormat(targetFormat)
+            .on('end', resolve)
+            .on('error', reject)
+            .save(outputPath);
+        });
+      } else {
+        // Mock document conversion for now as LibreOffice is not available
+        // In a real environment, we would use: exec(`soffice --headless --convert-to ${targetFormat} ${inputPath}`)
+        throw new Error('Document conversion not supported in this environment');
+      }
+
+      const stats = fs.statSync(outputPath);
+      const appUrl = process.env.APP_URL || `https://${req.get('host')}`;
+      
+      res.json({
+        url: `${appUrl}/temp/${outputFilename}`,
+        size: stats.size
+      });
+    } catch (error: any) {
+      console.error('Conversion error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Pwned Check Route (Proxy)
+  app.get("/api/auth/pwned/:prefix", async (req, res) => {
+    const { prefix } = req.params;
+    try {
+      const response = await axios.get(`https://api.pwnedpasswords.com/range/${prefix}`);
+      const lines = response.data.split('\n');
+      const hashes = lines.map((line: string) => {
+        const [suffix, count] = line.split(':');
+        return { suffix: suffix.trim(), count: parseInt(count.trim()) };
+      });
+      res.json({ hashes });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to check pwned database" });
+    }
+  });
+
+  // Serve temp files
+  app.use('/temp', express.static(tempDir));
+
+  // Cleanup Job: Delete files older than 1 hour
+  cron.schedule('0 * * * *', () => {
+    const now = Date.now();
+    fs.readdir(tempDir, (err, files) => {
+      if (err) return;
+      files.forEach(file => {
+        const filePath = path.join(tempDir, file);
+        fs.stat(filePath, (err, stats) => {
+          if (err) return;
+          if (now - stats.mtimeMs > 3600000) {
+            fs.unlink(filePath, () => {});
+          }
+        });
+      });
+    });
   });
 
   // Vite middleware for development

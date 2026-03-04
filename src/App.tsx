@@ -18,7 +18,9 @@ import {
   User,
   Sparkles,
   Timer,
-  StickyNote
+  StickyNote,
+  RefreshCw,
+  ShieldCheck
 } from 'lucide-react';
 import { TabId, FileItem, SmartRule } from './types';
 import { MOCK_FILES, MOCK_RULES } from './constants';
@@ -35,6 +37,8 @@ import Settings from './components/Settings';
 import AIAssistant from './components/AIAssistant';
 import FocusTimer from './components/FocusTimer';
 import SmartNotes from './components/SmartNotes';
+import FileConverter from './components/FileConverter';
+import PasswordChecker from './components/PasswordChecker';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
@@ -76,6 +80,8 @@ function AppContent() {
     { id: 'ai', name: 'AI Assistant', icon: Sparkles },
     { id: 'timer', name: 'Focus Timer', icon: Timer },
     { id: 'notes', name: 'Smart Notes', icon: StickyNote },
+    { id: 'converter', name: 'File Converter', icon: RefreshCw },
+    { id: 'password', name: 'Safety Checker', icon: ShieldCheck },
     { id: 'settings', name: 'Settings', icon: SettingsIcon },
   ];
 
@@ -90,6 +96,8 @@ function AppContent() {
       case 'ai': return <AIAssistant />;
       case 'timer': return <FocusTimer />;
       case 'notes': return <SmartNotes />;
+      case 'converter': return <FileConverter />;
+      case 'password': return <PasswordChecker />;
       case 'settings': return <Settings setFiles={setFiles} setRules={setRules} />;
       default: return <Dashboard files={files} rules={rules} setFiles={setFiles} setActiveTab={setActiveTab} />;
     }
