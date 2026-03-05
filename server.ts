@@ -10,6 +10,10 @@ import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import { promisify } from 'util';
 import cron from 'node-cron';
+import helmet from "helmet";
+import { rateLimit } from "express-rate-limit";
+import { z } from "zod";
+import xss from "xss";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,7 +60,66 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  // Trust proxy is required for express-rate-limit to work correctly behind Vercel/Nginx
+  app.set('trust proxy', 1);
+
+  // 1. Security Headers (OWASP Best Practice)
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "img-src": ["'self'", "data:", "https:", "http:"],
+        "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        "connect-src": ["'self'", "https:", "http:"],
+      },
+    },
+  }));
+
+  // 2. Rate Limiting (OWASP Best Practice)
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // Limit each IP to 100 requests per windowMs
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: "Too many requests, please try again later." },
+  });
+
+  app.use("/api", limiter);
+
+  app.use(express.json({ limit: '10kb' })); // Limit body size to prevent DoS
+
+  // 3. Input Validation Schemas (Zod)
+  const signupSchema = z.object({
+    email: z.string().email().max(255),
+    password: z.string().min(8).max(100),
+    name: z.string().min(1).max(100),
+  });
+
+  const loginSchema = z.object({
+    email: z.string().email().max(255),
+    password: z.string().max(100),
+  });
+
+  const noteSchema = z.object({
+    userId: z.string().max(50),
+    title: z.string().min(1).max(200),
+    content: z.string().max(10000),
+  });
+
+  const fileSchema = z.object({
+    userId: z.string().max(50),
+    name: z.string().min(1).max(255),
+    size: z.number().positive(),
+    type: z.string().max(100),
+    url: z.string().url().max(1000),
+  });
+
+  const userUpdateSchema = z.object({
+    name: z.string().min(1).max(100),
+  });
+
+  // Helper for sanitization
+  const sanitize = (str: string) => xss(str);
 
   // Health Check
   app.get("/api/health", async (req, res) => {
@@ -183,8 +246,10 @@ async function startServer() {
 
   app.post("/api/auth/signup", async (req, res) => {
     try {
-      const { email, password, name } = req.body;
-      if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
+      const validated = signupSchema.parse(req.body);
+      const email = sanitize(validated.email);
+      const name = sanitize(validated.name);
+      const password = validated.password; // Don't sanitize passwords as they are hashed/stored securely
 
       const id = Math.random().toString(36).substr(2, 9);
       const avatarColor = ['#3b82f6', '#a855f7', '#ef4444', '#10b981', '#f59e0b'][Math.floor(Math.random() * 5)];
@@ -203,6 +268,9 @@ async function startServer() {
 
       res.json({ id: newUser.id, email: newUser.email, name: newUser.name, avatarColor: newUser.avatar_color });
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation failed", details: error.issues });
+      }
       console.error("Signup Route Error:", error);
       res.status(500).json({ error: error.message || "Internal server error" });
     }
@@ -210,8 +278,9 @@ async function startServer() {
 
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, password } = req.body;
-      if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
+      const validated = loginSchema.parse(req.body);
+      const email = sanitize(validated.email);
+      const password = validated.password;
 
       const { data: user, error } = await supabase
         .from('profiles')
@@ -231,6 +300,9 @@ async function startServer() {
         res.status(401).json({ error: "Invalid credentials" });
       }
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation failed", details: error.issues });
+      }
       console.error("Login Route Error:", error);
       res.status(500).json({ error: error.message || "Internal server error" });
     }
@@ -251,8 +323,10 @@ async function startServer() {
   });
 
   app.patch("/api/user/:id", async (req, res) => {
-    const { name } = req.body;
     try {
+      const validated = userUpdateSchema.parse(req.body);
+      const name = sanitize(validated.name);
+      
       const { error } = await supabase
         .from('profiles')
         .update({ name })
@@ -260,67 +334,103 @@ async function startServer() {
       
       if (error) throw error;
       res.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation failed", details: error.issues });
+      }
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
   // Notes and Files Routes
   app.get("/api/notes/:userId", async (req, res) => {
-    const { data: notes, error } = await supabase
-      .from('notes')
-      .select('*')
-      .eq('user_id', req.params.userId);
-    
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(notes);
+    try {
+      const userId = z.string().max(50).parse(req.params.userId);
+      const { data: notes, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (error) return res.status(500).json({ error: error.message });
+      res.json(notes);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid user ID" });
+    }
   });
 
   app.post("/api/notes", async (req, res) => {
-    const { userId, content, title } = req.body;
-    const { data: note, error } = await supabase
-      .from('notes')
-      .insert([{ user_id: userId, content, title }])
-      .select()
-      .single();
-    
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(note);
+    try {
+      const validated = noteSchema.parse(req.body);
+      const userId = sanitize(validated.userId);
+      const title = sanitize(validated.title);
+      const content = sanitize(validated.content);
+
+      const { data: note, error } = await supabase
+        .from('notes')
+        .insert([{ user_id: userId, content, title }])
+        .select()
+        .single();
+      
+      if (error) return res.status(500).json({ error: error.message });
+      res.json(note);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation failed", details: error.issues });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   app.get("/api/files/:userId", async (req, res) => {
-    const { data: files, error } = await supabase
-      .from('files')
-      .select('*')
-      .eq('user_id', req.params.userId);
-    
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(files);
+    try {
+      const userId = z.string().max(50).parse(req.params.userId);
+      const { data: files, error } = await supabase
+        .from('files')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (error) return res.status(500).json({ error: error.message });
+      res.json(files);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid user ID" });
+    }
   });
 
   app.post("/api/files", async (req, res) => {
-    const { userId, name, size, type, url } = req.body;
-    const { data: file, error } = await supabase
-      .from('files')
-      .insert([{ user_id: userId, name, size, type, url }])
-      .select()
-      .single();
-    
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(file);
+    try {
+      const validated = fileSchema.parse(req.body);
+      const userId = sanitize(validated.userId);
+      const name = sanitize(validated.name);
+      const url = validated.url; // URL is validated by Zod
+
+      const { data: file, error } = await supabase
+        .from('files')
+        .insert([{ user_id: userId, name, size: validated.size, type: validated.type, url }])
+        .select()
+        .single();
+      
+      if (error) return res.status(500).json({ error: error.message });
+      res.json(file);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation failed", details: error.issues });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   // File Conversion Route
   app.post("/api/convert", upload.single('file'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-    const { targetFormat } = req.body;
-    if (!targetFormat) return res.status(400).json({ error: "No target format specified" });
-
-    const inputPath = req.file.path;
-    const outputFilename = `converted-${Date.now()}.${targetFormat}`;
-    const outputPath = path.join(tempDir, outputFilename);
-
     try {
+      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+      
+      const targetFormatSchema = z.string().min(1).max(10).regex(/^[a-zA-Z0-9]+$/);
+      const targetFormat = targetFormatSchema.parse(req.body.targetFormat);
+
+      const inputPath = req.file.path;
+      const outputFilename = `converted-${Date.now()}.${targetFormat}`;
+      const outputPath = path.join(tempDir, outputFilename);
+
       const mimeType = req.file.mimetype;
       
       if (mimeType.startsWith('image/')) {
@@ -334,8 +444,6 @@ async function startServer() {
             .save(outputPath);
         });
       } else {
-        // Mock document conversion for now as LibreOffice is not available
-        // In a real environment, we would use: exec(`soffice --headless --convert-to ${targetFormat} ${inputPath}`)
         throw new Error('Document conversion not supported in this environment');
       }
 
@@ -347,6 +455,9 @@ async function startServer() {
         size: stats.size
       });
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid target format" });
+      }
       console.error('Conversion error:', error);
       res.status(500).json({ error: error.message });
     }
@@ -354,8 +465,10 @@ async function startServer() {
 
   // Pwned Check Route (Proxy)
   app.get("/api/auth/pwned/:prefix", async (req, res) => {
-    const { prefix } = req.params;
     try {
+      const prefixSchema = z.string().length(5).regex(/^[0-9A-F]+$/i);
+      const prefix = prefixSchema.parse(req.params.prefix).toUpperCase();
+
       const response = await axios.get(`https://api.pwnedpasswords.com/range/${prefix}`);
       const lines = response.data.split('\n');
       const hashes = lines.map((line: string) => {
@@ -364,6 +477,9 @@ async function startServer() {
       });
       res.json({ hashes });
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid prefix format" });
+      }
       res.status(500).json({ error: "Failed to check pwned database" });
     }
   });
