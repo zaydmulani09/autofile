@@ -53,7 +53,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        throw new Error(`Unexpected response format: ${text.slice(0, 100)}`);
+        console.error('Non-JSON response received:', text);
+        throw new Error(`Server returned HTML instead of JSON. This usually means the API route was not found or the server crashed. Response: ${text.slice(0, 50)}...`);
       }
 
       const { url } = await response.json();

@@ -63,85 +63,14 @@ async function startServer() {
   // Trust proxy is required for express-rate-limit to work correctly behind Vercel/Nginx
   app.set('trust proxy', 1);
 
-  // 1. Security Headers (OWASP Best Practice)
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        "img-src": ["'self'", "data:", "https:", "http:"],
-        "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-        "connect-src": ["'self'", "https:", "http:"],
-      },
-    },
-  }));
-
-  // 2. Rate Limiting (OWASP Best Practice)
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 100, // Limit each IP to 100 requests per windowMs
-    standardHeaders: 'draft-7',
-    legacyHeaders: false,
-    message: { error: "Too many requests, please try again later." },
-  });
-
-  app.use("/api", limiter);
-
-  app.use(express.json({ limit: '10kb' })); // Limit body size to prevent DoS
-
-  // 3. Input Validation Schemas (Zod)
-  const signupSchema = z.object({
-    email: z.string().email().max(255),
-    password: z.string().min(8).max(100),
-    name: z.string().min(1).max(100),
-  });
-
-  const loginSchema = z.object({
-    email: z.string().email().max(255),
-    password: z.string().max(100),
-  });
-
-  const noteSchema = z.object({
-    userId: z.string().max(50),
-    title: z.string().min(1).max(200),
-    content: z.string().max(10000),
-  });
-
-  const fileSchema = z.object({
-    userId: z.string().max(50),
-    name: z.string().min(1).max(255),
-    size: z.number().positive(),
-    type: z.string().max(100),
-    url: z.string().url().max(1000),
-  });
-
-  const userUpdateSchema = z.object({
-    name: z.string().min(1).max(100),
-  });
-
-  // Helper for sanitization
-  const sanitize = (str: string) => xss(str);
-
-  // Health Check
-  app.get("/api/health", async (req, res) => {
-    try {
-      const { data, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-      if (error) throw error;
-      res.json({ status: "ok", supabase: "connected" });
-    } catch (error: any) {
-      console.error("Health Check Error:", error);
-      res.status(500).json({ status: "error", message: error.message });
-    }
-  });
-
-  // Google OAuth configuration
+  // --- AUTH ROUTES (Priority) ---
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
   const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
   
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
     console.warn("WARNING: Google OAuth credentials (GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET) are missing. Google Login will not work.");
   }
-  
-  // Auth Routes
+
   app.get("/api/auth/google/url", (req, res) => {
     try {
       const appUrl = process.env.APP_URL || `https://${req.get('host')}`;
@@ -276,6 +205,93 @@ async function startServer() {
           </body>
         </html>
       `);
+    }
+  });
+
+  // 1. Security Headers (OWASP Best Practice)
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "img-src": ["'self'", "data:", "https:", "http:"],
+        "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        "connect-src": ["'self'", "https:", "http:"],
+      },
+    },
+  }));
+
+  // 2. Rate Limiting (OWASP Best Practice)
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // Limit each IP to 100 requests per windowMs
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: "Too many requests, please try again later." },
+  });
+
+  app.use("/api", limiter);
+
+  // Debug route to check API connectivity
+  app.get("/api/debug", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      message: "API is reachable", 
+      timestamp: new Date().toISOString(),
+      config: {
+        hasGoogleId: !!process.env.GOOGLE_CLIENT_ID,
+        hasGoogleSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+        hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        nodeEnv: process.env.NODE_ENV,
+        vercel: process.env.VERCEL
+      }
+    });
+  });
+
+  app.use(express.json({ limit: '10kb' })); // Limit body size to prevent DoS
+
+  // 3. Input Validation Schemas (Zod)
+  const signupSchema = z.object({
+    email: z.string().email().max(255),
+    password: z.string().min(8).max(100),
+    name: z.string().min(1).max(100),
+  });
+
+  const loginSchema = z.object({
+    email: z.string().email().max(255),
+    password: z.string().max(100),
+  });
+
+  const noteSchema = z.object({
+    userId: z.string().max(50),
+    title: z.string().min(1).max(200),
+    content: z.string().max(10000),
+  });
+
+  const fileSchema = z.object({
+    userId: z.string().max(50),
+    name: z.string().min(1).max(255),
+    size: z.number().positive(),
+    type: z.string().max(100),
+    url: z.string().url().max(1000),
+  });
+
+  const userUpdateSchema = z.object({
+    name: z.string().min(1).max(100),
+  });
+
+  // Helper for sanitization
+  const sanitize = (str: string) => xss(str);
+
+  // Health Check
+  app.get("/api/health", async (req, res) => {
+    try {
+      const { data, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      res.json({ status: "ok", supabase: "connected" });
+    } catch (error: any) {
+      console.error("Health Check Error:", error);
+      res.status(500).json({ status: "error", message: error.message });
     }
   });
 
