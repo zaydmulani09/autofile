@@ -56,6 +56,38 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// --- Validation Schemas ---
+const sanitize = (str: string) => xss(str);
+
+const signupSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  name: z.string().min(2).max(50),
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+});
+
+const userUpdateSchema = z.object({
+  name: z.string().min(2).max(50),
+});
+
+const noteSchema = z.object({
+  userId: z.string(),
+  title: z.string().min(1).max(100),
+  content: z.string().min(1),
+});
+
+const fileSchema = z.object({
+  userId: z.string(),
+  name: z.string(),
+  size: z.number(),
+  type: z.string(),
+  url: z.string().url(),
+});
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -205,87 +237,6 @@ async function startServer() {
     }
   });
 
-  // Mount API Router
-  app.use("/api", apiRouter);
-
-  // 404 handler for API routes (must be after all apiRouter routes)
-  apiRouter.use("*", (req, res) => {
-    res.status(404).json({ error: "API route not found", method: req.method, path: req.originalUrl });
-  });
-
-  // --- 4. NON-API ROUTES ---
-  
-  // Google Auth Callback (Note: This is NOT under /api)
-  app.get("/auth/google/callback", async (req, res) => {
-    const appUrl = process.env.APP_URL || `https://${req.get('host')}`;
-    const REDIRECT_URI = `${appUrl}/auth/google/callback`;
-    const { code } = req.query;
-    
-    if (!code) {
-      return res.status(400).send("<h1>Auth Failed</h1><p>No code provided</p>");
-    }
-
-    try {
-      const tokenResponse = await axios.post("https://oauth2.googleapis.com/token", {
-        code,
-        client_id: GOOGLE_CLIENT_ID,
-        client_secret: GOOGLE_CLIENT_SECRET,
-        redirect_uri: REDIRECT_URI,
-        grant_type: "authorization_code",
-      });
-
-      const { access_token } = tokenResponse.data;
-      const userResponse = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-
-      const { sub: googleId, email, name } = userResponse.data;
-
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`google_id.eq.${googleId},email.eq.${email}`)
-        .maybeSingle();
-
-      let user = existingUser;
-
-      if (!user) {
-        const id = Math.random().toString(36).substr(2, 9);
-        const avatarColor = ['#3b82f6', '#a855f7', '#ef4444', '#10b981', '#f59e0b'][Math.floor(Math.random() * 5)];
-        const { data: newUser, error: insertError } = await supabase
-          .from('profiles')
-          .insert([{ id, email, name, avatar_color: avatarColor, google_id: googleId }])
-          .select()
-          .single();
-        if (insertError) throw insertError;
-        user = newUser;
-      } else if (!user.google_id) {
-        const { data: updatedUser, error: updateError } = await supabase
-          .from('profiles')
-          .update({ google_id: googleId })
-          .eq('id', user.id)
-          .select()
-          .single();
-        if (updateError) throw updateError;
-        user = updatedUser;
-      }
-
-      const userData = { id: user.id, email: user.email, name: user.name, avatarColor: user.avatar_color };
-
-      res.send(`
-        <html><body><script>
-          if (window.opener) {
-            window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', user: ${JSON.stringify(userData)} }, '*');
-            window.close();
-          } else { window.location.href = '/'; }
-        </script></body></html>
-      `);
-    } catch (error: any) {
-      console.error("Google Auth Error:", error.message);
-      res.status(500).send("<h1>Auth Failed</h1>");
-    }
-  });
-
   // User Profile
   apiRouter.get("/user/:id", async (req, res) => {
     const { data: user, error } = await supabase
@@ -379,6 +330,87 @@ async function startServer() {
       res.json({ hashes });
     } catch (error) {
       res.status(500).json({ error: "Failed to check pwned database" });
+    }
+  });
+
+  // 404 handler for API routes (must be after all apiRouter routes)
+  apiRouter.use("*", (req, res) => {
+    res.status(404).json({ error: "API route not found", method: req.method, path: req.originalUrl });
+  });
+
+  // Mount API Router
+  app.use("/api", apiRouter);
+
+  // --- 4. NON-API ROUTES ---
+  
+  // Google Auth Callback (Note: This is NOT under /api)
+  app.get("/auth/google/callback", async (req, res) => {
+    const appUrl = process.env.APP_URL || `https://${req.get('host')}`;
+    const REDIRECT_URI = `${appUrl}/auth/google/callback`;
+    const { code } = req.query;
+    
+    if (!code) {
+      return res.status(400).send("<h1>Auth Failed</h1><p>No code provided</p>");
+    }
+
+    try {
+      const tokenResponse = await axios.post("https://oauth2.googleapis.com/token", {
+        code,
+        client_id: GOOGLE_CLIENT_ID,
+        client_secret: GOOGLE_CLIENT_SECRET,
+        redirect_uri: REDIRECT_URI,
+        grant_type: "authorization_code",
+      });
+
+      const { access_token } = tokenResponse.data;
+      const userResponse = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      const { sub: googleId, email, name } = userResponse.data;
+
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('*')
+        .or(`google_id.eq.${googleId},email.eq.${email}`)
+        .maybeSingle();
+
+      let user = existingUser;
+
+      if (!user) {
+        const id = Math.random().toString(36).substr(2, 9);
+        const avatarColor = ['#3b82f6', '#a855f7', '#ef4444', '#10b981', '#f59e0b'][Math.floor(Math.random() * 5)];
+        const { data: newUser, error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id, email, name, avatar_color: avatarColor, google_id: googleId }])
+          .select()
+          .single();
+        if (insertError) throw insertError;
+        user = newUser;
+      } else if (!user.google_id) {
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('profiles')
+          .update({ google_id: googleId })
+          .eq('id', user.id)
+          .select()
+          .single();
+        if (updateError) throw updateError;
+        user = updatedUser;
+      }
+
+      const userData = { id: user.id, email: user.email, name: user.name, avatarColor: user.avatar_color };
+
+      res.send(`
+        <html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', user: ${JSON.stringify(userData)} }, '*');
+            window.close();
+          } else { window.location.href = '/'; }
+        </script></body></html>
+      `);
+    } catch (error: any) {
+      console.error("Google Auth Error:", error.message);
+      res.status(500).send("<h1>Auth Failed</h1>");
     }
   });
 
