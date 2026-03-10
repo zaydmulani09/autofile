@@ -137,33 +137,57 @@ async function startServer() {
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
   const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
   
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    console.warn("WARNING: Google OAuth credentials (GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET) are missing. Google Login will not work.");
+  }
+  
   // Auth Routes
   app.get("/api/auth/google/url", (req, res) => {
-    const appUrl = process.env.APP_URL || `https://${req.get('host')}`;
-    const REDIRECT_URI = `${appUrl}/auth/google/callback`;
+    try {
+      const appUrl = process.env.APP_URL || `https://${req.get('host')}`;
+      const REDIRECT_URI = `${appUrl}/auth/google/callback`;
 
-    if (!GOOGLE_CLIENT_ID) {
-      console.error("GOOGLE_CLIENT_ID is missing");
-      return res.status(500).json({ error: "Google Client ID not configured" });
+      if (!GOOGLE_CLIENT_ID) {
+        console.error("GOOGLE_CLIENT_ID is missing");
+        return res.status(500).json({ error: "Google Client ID not configured. Please set GOOGLE_CLIENT_ID in your environment variables." });
+      }
+      const params = new URLSearchParams({
+        client_id: GOOGLE_CLIENT_ID,
+        redirect_uri: REDIRECT_URI,
+        response_type: "code",
+        scope: "openid email profile",
+        access_type: "offline",
+        prompt: "select_account",
+      });
+      res.json({ url: `https://accounts.google.com/o/oauth2/v2/auth?${params}` });
+    } catch (error: any) {
+      console.error("Error generating Google Auth URL:", error);
+      res.status(500).json({ error: "Internal server error while generating auth URL" });
     }
-    const params = new URLSearchParams({
-      client_id: GOOGLE_CLIENT_ID,
-      redirect_uri: REDIRECT_URI,
-      response_type: "code",
-      scope: "openid email profile",
-      access_type: "offline",
-      prompt: "select_account",
-    });
-    res.json({ url: `https://accounts.google.com/o/oauth2/v2/auth?${params}` });
   });
 
   app.get("/auth/google/callback", async (req, res) => {
     const appUrl = process.env.APP_URL || `https://${req.get('host')}`;
     const REDIRECT_URI = `${appUrl}/auth/google/callback`;
     const { code } = req.query;
-    if (!code) return res.status(400).send("No code provided");
+    
+    if (!code) {
+      return res.status(400).send(`
+        <html>
+          <body>
+            <h1>Authentication Failed</h1>
+            <p>No authorization code received from Google.</p>
+            <button onclick="window.close()">Close Window</button>
+          </body>
+        </html>
+      `);
+    }
 
     try {
+      if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+        throw new Error("Google OAuth credentials are not configured on the server.");
+      }
+
       // Exchange code for tokens
       const tokenResponse = await axios.post("https://oauth2.googleapis.com/token", {
         code,
@@ -180,14 +204,16 @@ async function startServer() {
         headers: { Authorization: `Bearer ${access_token}` },
       });
 
-      const { sub: googleId, email, name, picture } = userResponse.data;
+      const { sub: googleId, email, name } = userResponse.data;
 
       // Check if user exists in Supabase
       const { data: existingUser, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
         .or(`google_id.eq.${googleId},email.eq.${email}`)
-        .single();
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
 
       let user = existingUser;
 
@@ -240,7 +266,16 @@ async function startServer() {
       `);
     } catch (error: any) {
       console.error("Google Auth Error:", error.response?.data || error.message);
-      res.status(500).send("Authentication failed");
+      const errorMessage = error.response?.data?.error_description || error.message || "Authentication failed";
+      res.status(500).send(`
+        <html>
+          <body>
+            <h1>Authentication Failed</h1>
+            <p>${errorMessage}</p>
+            <button onclick="window.close()">Close Window</button>
+          </body>
+        </html>
+      `);
     }
   });
 

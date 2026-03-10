@@ -39,9 +39,24 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setIsLoading(true);
     try {
       const response = await fetch('/api/auth/google/url');
-      if (!response.ok) throw new Error('Failed to get Google Auth URL');
-      const { url } = await response.json();
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to get Google Auth URL');
+        } else {
+          const text = await response.text();
+          throw new Error(`Server error (${response.status}): ${text.slice(0, 100)}`);
+        }
+      }
       
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Unexpected response format: ${text.slice(0, 100)}`);
+      }
+
+      const { url } = await response.json();
       window.open(url, 'google_auth', 'width=500,height=600');
     } catch (err: any) {
       setError(err.message);
